@@ -56,6 +56,7 @@ endif()
 if(TORCH)
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${TORCH})
     find_package(Torch REQUIRED)
+    add_definitions(-DWITH_TORCH)
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${TORCH_LIBRARIES})
 endif()
 
