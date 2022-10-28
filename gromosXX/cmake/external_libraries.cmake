@@ -53,6 +53,12 @@ if(XTB)
     set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${XTB_INCLUDES})
 endif()
 
+if(TORCH)
+    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${TORCH})
+    find_package(Torch REQUIRED)
+    set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${TORCH_LIBRARIES})
+endif()
+
 # find options based libraries
 if(OMP)
     find_package(FFTWomp REQUIRED)
