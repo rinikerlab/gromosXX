@@ -89,6 +89,11 @@ if(XTB)
     list (APPEND INTERACTION_CC "qmmm/xtb_worker.cc")
 endif()
 
+if(TORCH)
+    list (APPEND INTERACTION_CC "special/torch_interaction.cc")
+    list (APPEND INTERACTION_CC "special/torch_qmmm_interaction.cc")
+endif()
+
 add_library(grointeraction OBJECT ${INTERACTION_CC})
 
 target_include_directories(grointeraction PUBLIC

@@ -28,12 +28,12 @@ include(${PROJECT_SOURCE_DIR}/cmake/external_libraries.cmake)
 # perform tests and configure according to results / options
 include(${PROJECT_SOURCE_DIR}/cmake/configure.cmake)
 
-# code
-add_subdirectory(src)
-
 # remove duplicate includes and libraries
 list(REMOVE_DUPLICATES EXTERNAL_INCLUDES)
 list(REMOVE_DUPLICATES EXTERNAL_LIBRARIES)
+
+# code
+add_subdirectory(src)
 
 # md, md_mpi, eds, repex_mpi, ...
 add_subdirectory(program)

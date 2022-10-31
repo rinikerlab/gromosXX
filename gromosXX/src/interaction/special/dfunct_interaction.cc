@@ -28,8 +28,8 @@
 
 template<math::boundary_enum B>
 static int _calculate_dfunct_substitution_form(topology::Topology& topo, 
-																					     configuration::Configuration& conf, 
-																					     simulation::Simulation& sim) {
+											   configuration::Configuration& conf, 
+											   simulation::Simulation& sim) {
 	// shorten the code 
 	int atom_i = sim.param().dfunct.atom_i; 
 	int atom_j = sim.param().dfunct.atom_j;
@@ -66,9 +66,9 @@ static int _calculate_dfunct_substitution_form(topology::Topology& topo,
 	DEBUG(30, "DFUNCT Prefactor i " << math::v2s(prefactor_i));
 	DEBUG(30, "DFUNCT Prefactor k " << math::v2s(prefactor_k));
 	DEBUG(10, "DFUNCT Force on i " << math::v2s(force_i));
-  DEBUG(10, "DFUNCT Force on j " << math::v2s(force_j));
-  DEBUG(10, "DFUNCT Force on k " << math::v2s(force_k));
-  DEBUG(10, "DFUNCT Force on l " << math::v2s(force_l));
+    DEBUG(10, "DFUNCT Force on j " << math::v2s(force_j));
+    DEBUG(10, "DFUNCT Force on k " << math::v2s(force_k));
+    DEBUG(10, "DFUNCT Force on l " << math::v2s(force_l));
 	DEBUG(10, "DFUNCT V_bias " << V_bias);
 	
 	// store forces
@@ -87,8 +87,8 @@ static int _calculate_dfunct_substitution_form(topology::Topology& topo,
 
 template<math::boundary_enum B>
 static int _calculate_dfunct_cycloaddition_form(topology::Topology& topo, 
-																					     configuration::Configuration& conf, 
-																					     simulation::Simulation& sim) {
+											    configuration::Configuration& conf, 
+											    simulation::Simulation& sim) {
 	// shorten the code 
 	int atom_i = sim.param().dfunct.atom_i; 
 	int atom_j = sim.param().dfunct.atom_j;
@@ -140,9 +140,9 @@ static int _calculate_dfunct_cycloaddition_form(topology::Topology& topo,
 	conf.current().force(atom_l) += force_l;
 
 	DEBUG(10, "DFUNCT Force on i " << math::v2s(force_i));
-  DEBUG(10, "DFUNCT Force on j " << math::v2s(force_j));
-  DEBUG(10, "DFUNCT Force on k " << math::v2s(force_k));
-  DEBUG(10, "DFUNCT Force on l " << math::v2s(force_l));
+    DEBUG(10, "DFUNCT Force on j " << math::v2s(force_j));
+    DEBUG(10, "DFUNCT Force on k " << math::v2s(force_k));
+    DEBUG(10, "DFUNCT Force on l " << math::v2s(force_l));
 	DEBUG(10, "DFUNCT V_bias " << V_bias);
 
 	// distribute potential over all participating atoms
@@ -154,17 +154,17 @@ static int _calculate_dfunct_cycloaddition_form(topology::Topology& topo,
 }
 
 int interaction::DFunct_Interaction::init(topology::Topology& topo,
-		     																  configuration::Configuration& conf,
-		     																  simulation::Simulation& sim,
-		     																  std::ostream& os,
-		     																  bool quiet) {
+		     							  configuration::Configuration& conf,
+		     							  simulation::Simulation& sim,
+		     							  std::ostream& os,
+		     							  bool quiet) {
   
 	return 0;
 }
 
 int interaction::DFunct_Interaction::calculate_interactions(topology::Topology & topo,
-				                                                    configuration::Configuration& conf,
-				                                                    simulation::Simulation& sim) {
+				                                            configuration::Configuration& conf,
+				                                            simulation::Simulation& sim) {
   // atomic distances expressed as vectors
 	// in GROMOS vector r_ji is defined as the vector from point i to point j (r_j - r_i)
 	// find nearest periodic copies

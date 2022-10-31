@@ -54,10 +54,13 @@ if(XTB)
 endif()
 
 if(TORCH)
+    # https://pytorch.org/cppdocs/installing.html
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${TORCH})
     find_package(Torch REQUIRED)
     add_definitions(-DWITH_TORCH)
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${TORCH_LIBRARIES})
+    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${TORCH_INCLUDE_DIRS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 endif()
 
 # find options based libraries
@@ -70,5 +73,5 @@ endif()
 if(MPI)
     find_package(FFTWmpi REQUIRED)
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${FFTW_MPI_LIBRARIES})
-    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES}${FFTW_MPI_INCLUDE_DIRS})
+    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${FFTW_MPI_INCLUDE_DIRS})
 endif()
