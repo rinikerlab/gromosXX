@@ -49,29 +49,54 @@ public:
 private:
 
     /**
-     * Prepares the coordinates according to the atom selection scheme selected
-     */
-    virtual int prepare_coordinates(simulation::Simulation& sim) override;
-
-    /**
-     * Initializes tensors ready to go into the model
-     */
-    virtual int prepare_tensors(simulation::Simulation& sim) override;
-
-    /**
      * Sets-up a pointer to the QM zone of the simulation
     */
-    int initialize_qm_zone();
+    virtual int init_qm_zone();
+
+    /**
+     * Prepares the coordinates according to the atom selection scheme selected
+     */
+    virtual int prepare_input(const simulation::Simulation& sim) override;
 
     /**
      * Sets-up the vector with QM atom types
     */
-    int initialize_qm_atom_types();
+    virtual int init_qm_atom_numbers();
+
+    /**
+     * Sets-up the vector with QM coordinates - will also cast double to float
+    */
+    virtual int prepare_qm_atoms();
+
+    /**
+     * Sets-up the vectors with MM atom types, charges, and coordinates - will also cast double to float
+    */
+    virtual int prepare_mm_atoms();
+
+    /**
+     * Initializes tensors ready to go into the model
+     */
+    virtual int build_tensors(const simulation::Simulation& sim) override;
+
+    /**
+     * Computes the number of charges like in QM_Worker.cc
+    */
+    virtual int get_num_charges(const simulation::Simulation& sim);
 
     /**
      * A (non-owning) pointer to the QM zone
     */
     QM_Zone* qm_zone_ptr;
+
+    /**
+     * The size of the QM zone (QM atoms + QM link atoms)
+    */
+    int natoms;
+
+    /**
+     * Number of point charges in the MM zone
+    */
+    int ncharges;
     
     /**
      * Atomic numbers of the QM zone as C style array

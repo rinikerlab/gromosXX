@@ -59,10 +59,10 @@ namespace interaction {
   int Torch_Interaction::calculate_interactions(topology::Topology & topo,
 				                                     configuration::Configuration & conf,
 				                                     simulation::Simulation & sim) {
-    int err = prepare_coordinates(sim);
+    int err = prepare_input(sim);
     if (err) return err;
 
-    err = prepare_tensors(sim);
+    err = build_tensors(sim);
     if (err) return err;
 
     err = forward();

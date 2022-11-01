@@ -61,12 +61,12 @@ namespace interaction {
       /**
        * Prepares the coordinates according to the atom selection scheme selected
       */
-      virtual int prepare_coordinates(simulation::Simulation& sim) = 0;
+      virtual int prepare_input(const simulation::Simulation& sim) = 0;
 
       /**
        * Initializes tensors ready to go into the model
       */
-      virtual int prepare_tensors(simulation::Simulation& sim) = 0;
+      virtual int build_tensors(const simulation::Simulation& sim) = 0;
       
       /**
        * Forward pass of the model loaded

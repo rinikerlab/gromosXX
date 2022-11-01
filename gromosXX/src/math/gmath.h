@@ -835,13 +835,13 @@ namespace math
    * @param scaling The scaling factor
    */
   template <typename T>
-  inline void vector_c2f(std::vector<double>& v_f
+  inline void vector_c2f(std::vector<T>& v_f
                 , const math::Vec& v_c
                 , const unsigned int offset
                 , const double scaling = 1.0) 
   {
     for (unsigned int i = 0; i < 3; ++i) {
-      v_f[3 * offset + i] = v_c(i) * scaling;
+      v_f[3 * offset + i] = static_cast<T>(v_c(i) * scaling);
     }
   }
   /**
@@ -860,7 +860,7 @@ namespace math
                 , const double scaling = 1.0) 
   {
     for (unsigned int i = 0; i < 3; ++i) {
-      v_c(i) = v_f[3 * offset + i] * scaling;
+      v_c(i) = static_cast<double>(v_f[3 * offset + i] * scaling);
     }
   }
 
