@@ -93,9 +93,12 @@ int main(int argc, char *argv[]){
 	 << "trc" << "fin" << "trv" << "trf" << "trs" << "tre" << "trg"
 	 << "bae" << "bag" << "posresspec" << "refpos" <<"distrest" 
 	 << "angrest" << "dihrest"
-         << "jval" << "xray" << "sym" << "order" << "rdc" << "lud" << "led" << "bsleus" 
-         << "anatrj" << "print" << "friction" << "qmmm" << "version" << "develop";
-  
+   << "jval" << "xray" << "sym" << "order" << "rdc" << "lud" << "led" << "bsleus" 
+   << "anatrj" << "print" << "friction" << "qmmm" 
+#ifdef WITH_TORCH
+   << "torch"
+#endif
+   << "version" << "develop";
   
   std::string usage;
   util::get_usage(knowns, usage, argv[0]);

@@ -10,7 +10,7 @@
 #include "../../stdheader.h"
 #include "../../interaction/special/torch_interaction.h"
 
-namespace Interaction {
+namespace interaction {
 
 /**
  * A specialized version of Torch_Interaction that sends the QM/MM zone to a Torch model
@@ -22,12 +22,12 @@ public:
     /**
      * Initializes the interaction
     */
-    Torch_QMMM_Intspecial(const std::string& name);
+    Torch_QMMM_Interaction(const std::string& name);
 
     /**
      * Deallocates resources
     */
-    virtual ~Torch_QMMM_Intspecial();
+    virtual ~Torch_QMMM_Interaction();
 
 private:
 

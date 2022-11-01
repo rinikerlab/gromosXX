@@ -30,6 +30,10 @@ set(IO_CC
     topology/in_rdc.cc
 )
 
+if(TORCH)
+    list (APPEND IO_CC "topology/in_torch.cc")
+endif()
+
 add_library(groio OBJECT ${IO_CC})
 
 target_include_directories(groio PUBLIC

@@ -5778,13 +5778,13 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
 
         switch (device) {
           case 0:
-              param.torch.device = simulation::autodetect;
+              param.torch.device = simulation::torch_autodetect;
               break;
           case 1:
-              param.torch.device = simulation::cpu;
+              param.torch.device = simulation::torch_cpu;
               break;
           case 2:
-              param.torch.device = simulation::gpu;
+              param.torch.device = simulation::torch_gpu;
               break;
           default:
               break;

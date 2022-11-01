@@ -74,6 +74,9 @@ int main(int argc, char *argv[]){
          << "tre1" << "tre2" << "trg1" << "trg2"
          << "bae" << "bag" << "posresspec" << "refpos" << "distrest1" << "distrest2" << "dihrest"
          << "jval" << "xray" << "order" << "rdc" << "lud" << "led" << "anatrj" << "print" << "friction"
+#ifdef WITH_TORCH
+   << "torch"
+#endif
          << "qmmm" << "version";
 
     std::string usage;

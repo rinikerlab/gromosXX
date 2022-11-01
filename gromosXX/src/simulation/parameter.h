@@ -144,15 +144,33 @@ namespace simulation
     /**
      * autodetect architecture
      */
-    autodetect = 0,
+    torch_autodetect = 0,
     /**
      * run on CPU
      */
-    cpu = 1,
+    torch_cpu = 1,
     /**
      * run on GPU
      */
-    gpu = 2
+    torch_gpu = 2
+  };
+/**
+   * @enum torch_atom_enum
+   * which atoms will be sent to PyTorch
+   */
+  enum torch_atom_enum {
+    /**
+     * all atoms are sent
+     */
+    torch_all = 0,
+    /**
+     * qm_zone will be sent
+     */
+    torch_qmmm = 1,
+    /**
+     * custom atom selector (not implemented yet)
+     */
+    torch_custom = 2
   };
   /**
    * @enum special_loop_enum
@@ -4378,21 +4396,48 @@ namespace simulation
        */
       double force;
     } dfunct;
-
+#ifdef WITH_TORCH
     struct torch_struct {
 
-      torch_struct() : torch(torch_off), device (autodetect) {}
+      torch_struct() : torch (torch_off), 
+                       device (torch_autodetect) {}
 
       /**
        * torch enum 
        */
       torch_enum torch;
       /**
-       * index of first atom involved in the potential
+       * device all models will run on
        */
       torch_device_enum device;
+
+      struct torch_model_struct {
+
+        /*
+         * Default constructor
+         */
+        torch_model_struct() : atoms(torch_all) {}
+        /**
+         * Pass which atoms to send and which model to load
+        */
+        torch_model_struct(torch_atom_enum atoms, const std::string& filename) : atoms(atoms), filename(filename) {}
+
+        /**
+         * which atoms go to the model
+         */
+        torch_atom_enum atoms;
+        /**
+         * the name of the PyTorch model
+         */
+        std::string filename;
+      };
+
+      /**
+       * all models loaded
+       */
+      std::vector<torch_model_struct> models;
     } torch;
-    
+#endif    
     /**
      A struct to mark parts of the code as "under development"
      */

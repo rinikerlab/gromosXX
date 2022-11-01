@@ -31,6 +31,9 @@
 #include "../io/topology/in_leus.h"
 #include "../io/topology/in_bsleus.h"
 #include "../io/topology/in_qmmm.h"
+#ifdef WITH_TORCH
+#include "../io/topology/in_torch.h"
+#endif
 #include "../io/topology/in_order.h"
 #include "../io/topology/in_symrest.h"
 #include "../io/topology/in_rdc.h"
@@ -411,7 +414,34 @@ int io::read_special(io::Argument const & args,
       }
     }
   }
-  
+
+#ifdef WITH_TORCH
+  // Torch
+  if (sim.param().torch.torch == simulation::torch_on) {
+    io::igzstream torch_file;
+
+    if (args.count("torch") != 1) {
+      io::messages.add("Torch: no specification file specified (use @torch)",
+              "read special", io::message::error);
+    } else {
+      torch_file.open(args["torch"].c_str());
+      if (!torch_file.is_open()) {
+        io::messages.add("opening Torch specification file failed!\n",
+                "read_special", io::message::error);
+      } else {
+        io::In_Torch iq(torch_file);
+        iq.quiet = quiet;
+        iq.title = "Torch";
+        
+        iq.read(topo, sim, os);
+        io::messages.add("Torch specification read from " +
+                args["torch"] + "\n" + util::frame_text(iq.title),
+                "read special", io::message::notice);
+      }
+    }
+  }
+#endif  
+
   // Symmetry restraints
   if (sim.param().symrest.symrest != simulation::xray_symrest_off) {
     io::igzstream symrest_file;

@@ -41,6 +41,9 @@
 #include "../../interaction/bonded/dihedral_new_interaction.h"
 #include "../../interaction/special/pscale.h"
 
+#include "../../interaction/special/torch_interaction.h"
+#include "../../interaction/special/torch_qmmm_interaction.h"
+
 #include "../../io/instream.h"
 #include "../../io/topology/in_topology.h"
 
@@ -59,8 +62,26 @@ int interaction::create_special(interaction::Forcefield & ff,
     if (!quiet) {
       os << "\tDFUNCT\n";
     }
-    interaction::DFunct_Interaction* dfunct = new interaction::DFunct_Interaction();
+    interaction::DFunct_Interaction* dfunct = new interaction::DFunct_Interaction(); // deleted in destructor of ff
     ff.push_back(dfunct);
+  }
+
+  // Torch
+  if (param.torch.torch == simulation::torch_on) {
+    if (!quiet) {
+      os << "\tTORCH\n";
+    }
+    std::cout << "Torch: Size models " << param.torch.models.size() << std::endl;
+    for (const auto& model : param.torch.models) {
+      std::cout << "Torch: Creating interactions" << std::endl;
+      std::cout << "Torch: Switch for model " << model.filename << " is: " << model.atoms << std::endl;
+      switch (model.atoms) {
+        case simulation::torch_all: std::cout << "Torch: All" << std::endl; break;
+        case simulation::torch_qmmm: std::cout << "Torch: All" << std::endl; break;
+        case simulation::torch_custom: std::cout << "Torch: All" << std::endl; break;
+        default: std::cout << "Torch: Default" << std::endl;
+      }
+    }
   }
 
   // Position restraints / constraints
