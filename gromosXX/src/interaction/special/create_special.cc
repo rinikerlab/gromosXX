@@ -41,8 +41,10 @@
 #include "../../interaction/bonded/dihedral_new_interaction.h"
 #include "../../interaction/special/pscale.h"
 
+#ifdef WITH_TORCH
 #include "../../interaction/special/torch_interaction.h"
 #include "../../interaction/special/torch_qmmm_interaction.h"
+#endif
 
 #include "../../io/instream.h"
 #include "../../io/topology/in_topology.h"

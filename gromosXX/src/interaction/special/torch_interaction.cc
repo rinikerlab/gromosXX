@@ -21,7 +21,36 @@
 #include "../../util/template_split.h"
 #include "../../util/debug.h"
 
+#include <torch/script.h>
+
 #undef MODULE
 #undef SUBMODULE
 #define MODULE interaction
 #define SUBMODULE special
+
+namespace interaction {
+
+  int Torch_Interaction::init(topology::Topology & topo,
+		                           configuration::Configuration & conf,
+		                           simulation::Simulation & sim,
+		                           std::ostream & os,
+		                           bool quiet) {
+                                    
+    int err = load_model();
+    if (err) return err;
+
+    return 0;
+  }
+
+  int Torch_Interaction::load_model() {
+    try {
+      // Deserialize the ScriptModule from a file using torch::jit::load().
+      module = torch::jit::load(model.filename);
+    } catch (const c10::Error &e) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+} // namespace interaction

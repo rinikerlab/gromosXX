@@ -35,9 +35,20 @@ namespace interaction {
      */
     virtual ~Torch_Interaction() = default;
 
+    /**
+     * Loads up the model
+     */
+    int init(topology::Topology & topo,
+		     configuration::Configuration & conf,
+		     simulation::Simulation & sim,
+		     std::ostream & os = std::cout,
+		     bool quiet = false) override;
+
 
     protected:
 
+      virtual int load_model();
+      
       /**
        * Forward pass of the model loaded
        */
@@ -49,9 +60,14 @@ namespace interaction {
       virtual void backward() = 0;
 
       /**
-       * Information on the model loaded
+       * Parameters on the model loaded
        */
       simulation::torch_model model;
+
+      /**
+       * A representation of the model
+       */
+      torch::jit::script::Module module;
 
       /**
        * energy calculated by PyTorch
