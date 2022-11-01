@@ -79,6 +79,16 @@ private:
     virtual int build_tensors(const simulation::Simulation& sim) override;
 
     /**
+      * Forward pass of the model loaded
+      */
+    virtual int forward() override;
+
+    /**
+     * Backward pass of the model loaded
+     */
+    virtual int backward() override;
+
+    /**
      * Computes the number of charges like in QM_Worker.cc
     */
     virtual int get_num_charges(const simulation::Simulation& sim);
@@ -147,6 +157,21 @@ private:
      * A (non-owning) tensor to hold MM positions
     */
     torch::Tensor mm_positions_tensor;
+
+    /**
+     * A (non-owning) tensor to hold energies calculated
+    */
+    torch::Tensor energy_tensor;
+
+    /**
+     * A (non-owning) tensor to hold QM gradients calculated
+    */
+    torch::Tensor qm_gradient_tensor;
+
+    /**
+     * A (non-owning) tensor to hold MM gradients calculated
+    */
+    torch::Tensor mm_gradient_tensor;
 
 };
 

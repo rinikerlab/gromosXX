@@ -29,11 +29,9 @@
 #include "../../util/template_split.h"
 #include "../../util/debug.h"
 
-#include <torch/torch.h>
-#include <torch/csrc/autograd/function.h>
-#include <torch/csrc/autograd/variable.h>
-#include <torch/script.h> 
+#include <tuple>
 
+#include <torch/torch.h>
 
 #undef MODULE
 #undef SUBMODULE
@@ -190,11 +188,51 @@ namespace interaction {
 
   int Torch_QMMM_Interaction::build_tensors(const simulation::Simulation& sim) {
     int err = 0;
-    qm_atomic_numbers_tensor = torch::from_blob(qm_atomic_numbers.data(), {natoms}, sim.param().torch.options_no_gradient);
-    qm_positions_tensor = torch::from_blob(qm_positions.data(), {natoms, 3}, sim.param().torch.options_gradient);
-    mm_atomic_numbers_tensor = torch::from_blob(mm_atomic_numbers.data(), {ncharges, 3}, sim.param().torch.options_no_gradient);
-    mm_charges_tensor = torch::from_blob(mm_charges.data(), {ncharges}, sim.param().torch.options_no_gradient);
-    mm_positions_tensor = torch::from_blob(mm_positions.data(), {ncharges, 3}, sim.param().torch.options_gradient);
+    qm_atomic_numbers_tensor = torch::from_blob(qm_atomic_numbers.data(), {natoms}, sim.param().torch.options_int);
+    qm_positions_tensor      = torch::from_blob(qm_positions.data(), {natoms, 3}, sim.param().torch.options_float_gradient);
+    mm_atomic_numbers_tensor = torch::from_blob(mm_atomic_numbers.data(), {ncharges}, sim.param().torch.options_int);
+    mm_charges_tensor        = torch::from_blob(mm_charges.data(), {ncharges}, sim.param().torch.options_float_no_gradient);
+    mm_positions_tensor      = torch::from_blob(mm_positions.data(), {ncharges, 3}, sim.param().torch.options_float_gradient);
+
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "torch::Tensor from std::vector<float> QM:" << std::endl;
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "Atomic numbers QM:" << std::endl;
+    std::cout << qm_atomic_numbers_tensor << std::endl;
+    std::cout << "Atomic positions QM:" << std::endl;
+    std::cout << qm_positions_tensor << std::endl;
+
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "torch::Tensor from std::vector<float> MM:" << std::endl;
+    std::cout << "-----------------------------------------" << std::endl;
+    std::cout << "Atomic numbers MM:" << std::endl;
+    std::cout << mm_atomic_numbers_tensor << std::endl;
+    std::cout << "Atomic charges MM:" << std::endl;
+    std::cout << mm_charges_tensor << std::endl;
+    std::cout << "Atomic positions MM:" << std::endl;
+    std::cout << mm_positions_tensor << std::endl;
+
+    return err;
+  }
+
+  int Torch_QMMM_Interaction::forward() {
+    int err = 0;
+    std::tuple<torch::Tensor,torch::Tensor> input_tuple(qm_positions_tensor, qm_positions_tensor);
+    energy_tensor = module.forward({input_tuple}).toTensor();
+    std::cout << "Energy tensor: " << std::endl;
+    std::cout << energy_tensor << std::endl;
+    return err;
+  }
+
+  int Torch_QMMM_Interaction::backward() {
+    int err = 0;
+    energy_tensor.backward();
+    qm_gradient_tensor = qm_positions_tensor.grad();
+    mm_gradient_tensor = mm_positions_tensor.grad();
+    std::cout << "QM gradient tensor: " << std::endl;
+    std::cout << qm_gradient_tensor << std::endl;
+    std::cout << "MM gradient tensor: " << std::endl;
+    std::cout << mm_gradient_tensor << std::endl;
     return err;
   }
 

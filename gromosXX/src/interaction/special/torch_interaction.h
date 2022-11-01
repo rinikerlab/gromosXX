@@ -71,12 +71,12 @@ namespace interaction {
       /**
        * Forward pass of the model loaded
        */
-      virtual int forward();
+      virtual int forward() = 0;
 
       /**
        * Backward pass of the model loaded
        */
-      virtual int backward();
+      virtual int backward() = 0;
 
       /**
        * Passes the energy back from Torch to Gromos

@@ -4440,13 +4440,17 @@ namespace simulation
        */
       std::vector<torch_model> models;
       /**
-       * options for tensors that require autograd
+       * options for floating point tensors that require autograd
       */
-      torch::TensorOptions options_gradient;
+      torch::TensorOptions options_float_gradient;
       /**
-       * options for tensors that do not require autograd
+       * options for floating point tensors that do not require autograd
       */
-      torch::TensorOptions options_no_gradient;
+      torch::TensorOptions options_float_no_gradient;
+      /**
+       * options for integer tensors
+      */
+      torch::TensorOptions options_int;
     } torch;
 #endif    
     /**

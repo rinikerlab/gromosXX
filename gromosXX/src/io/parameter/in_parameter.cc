@@ -5783,42 +5783,54 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
 
         if (device == 0) {
           param.torch.device = simulation::torch_autodetect;
-          param.torch.options_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+          param.torch.options_float_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCPU)
                                          .layout(torch::kStrided)
                                          .requires_grad(true);
-          param.torch.options_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+          param.torch.options_float_no_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCPU)
                                          .layout(torch::kStrided)
                                          .requires_grad(false); 
+          param.torch.options_int = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+                                         .dtype(torch::kInt32)
+                                         .device(torch::kCPU)
+                                         .layout(torch::kStrided);
         }
         else if (device == 1) {
           param.torch.device = simulation::torch_cpu;
-          param.torch.options_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+          param.torch.options_float_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCPU)
                                          .layout(torch::kStrided)
                                          .requires_grad(true);
-          param.torch.options_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+          param.torch.options_float_no_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCPU)
                                          .layout(torch::kStrided)
-                                         .requires_grad(false);                            
+                                         .requires_grad(false);  
+          param.torch.options_int = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+                                         .dtype(torch::kInt32)
+                                         .device(torch::kCPU)
+                                         .layout(torch::kStrided);                          
         }
         else if (device == 2) {
           param.torch.device = simulation::torch_gpu;
-          param.torch.options_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+          param.torch.options_float_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCUDA)
                                          .layout(torch::kStrided)
                                          .requires_grad(true);
-          param.torch.options_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+          param.torch.options_float_no_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCUDA)
                                          .layout(torch::kStrided)
                                          .requires_grad(false);
+          param.torch.options_int = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
+                                         .dtype(torch::kInt32)
+                                         .device(torch::kCUDA)
+                                         .layout(torch::kStrided);
         }
         else {
           // error management
