@@ -10,6 +10,10 @@
 #ifndef INCLUDED_PARAMETER_H
 #define INCLUDED_PARAMETER_H
 
+#ifdef WITH_TORCH
+#include <torch/torch.h>
+#endif
+
 namespace simulation
 {
   /**
@@ -4423,7 +4427,6 @@ namespace simulation
 
       torch_struct() : torch (torch_off), 
                        device (torch_autodetect) {}
-
       /**
        * torch enum 
        */
@@ -4436,6 +4439,14 @@ namespace simulation
        * all models loaded
        */
       std::vector<torch_model> models;
+      /**
+       * options for tensors that require autograd
+      */
+      torch::TensorOptions options_gradient;
+      /**
+       * options for tensors that do not require autograd
+      */
+      torch::TensorOptions options_no_gradient;
     } torch;
 #endif    
     /**

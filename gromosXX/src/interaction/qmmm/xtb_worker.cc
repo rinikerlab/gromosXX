@@ -219,7 +219,7 @@ int interaction::XTB_Worker::process_input_coordinates(const topology::Topology&
   for (std::set<QM_Atom>::const_iterator 
          it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
     DEBUG(15, it->index << " " << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
-    math::vector_c2f(this->coord, it->pos, i, len_to_qm);
+    math::vector_c2f<double>(this->coord, it->pos, i, len_to_qm);
     ++i;
   }
   // transfer capping atoms (index i keeps running...)
@@ -227,7 +227,7 @@ int interaction::XTB_Worker::process_input_coordinates(const topology::Topology&
   for (std::set<QM_Link>::const_iterator it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; it++) {
     DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
       << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
-    math::vector_c2f(this->coord, it->pos, i, len_to_qm);
+    math::vector_c2f<double>(this->coord, it->pos, i, len_to_qm);
     ++i;
   } 
 
@@ -261,14 +261,14 @@ int interaction::XTB_Worker::process_input_pointcharges(const topology::Topology
         << (it->charge - it->cos_charge) * cha_to_qm << " " << math::v2s(it->pos * len_to_qm));
       this->numbers[i] = it->atomic_number;
       this->charges[i] = (it->charge - it->cos_charge) * cha_to_qm;
-      math::vector_c2f(this->point_charges, it->pos, i, len_to_qm);
+      math::vector_c2f<double>(this->point_charges, it->pos, i, len_to_qm);
       ++i;
       // COS
       DEBUG(15, it->index << " " << it->atomic_number << " " 
         << it->cos_charge * cha_to_qm << " " << math::v2s((it->pos + it->cosV) * len_to_qm));
       this->numbers[i] = it->atomic_number;
       this->charges[i] = it->cos_charge * cha_to_qm;
-      math::vector_c2f(this->point_charges, it->cosV, i, len_to_qm);
+      math::vector_c2f<double>(this->point_charges, it->cosV, i, len_to_qm);
       ++i;
     }
     else {
@@ -276,7 +276,7 @@ int interaction::XTB_Worker::process_input_pointcharges(const topology::Topology
         << it->charge * cha_to_qm << " " << math::v2s(it->pos * len_to_qm));
       this->numbers[i] = it->atomic_number;
       this->charges[i] = it->charge * cha_to_qm;
-      math::vector_c2f(this->point_charges, it->pos, i, len_to_qm);
+      math::vector_c2f<double>(this->point_charges, it->pos, i, len_to_qm);
       ++i;
     }
   }
@@ -359,7 +359,7 @@ int interaction::XTB_Worker::parse_qm_gradients(interaction::QM_Zone& qm_zone) c
          it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
     // forces = negative gradient (!)
     DEBUG(15, "Parsing gradients of QM atom " << it->index);
-    math::vector_f2c(gradients, it->force, i, -1.0 * force_to_mm);
+    math::vector_f2c<double>(gradients, it->force, i, -1.0 * force_to_mm);
     DEBUG(15, "Force: " << math::v2s(it->force));
     ++i;
   }
@@ -367,7 +367,7 @@ int interaction::XTB_Worker::parse_qm_gradients(interaction::QM_Zone& qm_zone) c
   for (std::set<QM_Link>::iterator
          it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; ++it) {
     DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-" << it->mm_index);
-    math::vector_f2c(gradients, it->force, i, -1.0 * force_to_mm);
+    math::vector_f2c<double>(gradients, it->force, i, -1.0 * force_to_mm);
     DEBUG(15, "Force: " << math::v2s(it->force));
     ++i;
   }
@@ -389,12 +389,12 @@ int interaction::XTB_Worker::parse_mm_gradients(interaction::QM_Zone& qm_zone) c
          it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
     // forces = negative gradient (!)
     DEBUG(15,"Parsing gradient of MM atom " << it->index);
-    math::vector_f2c(pc_gradients, it->force, i, -1.0 * force_to_mm);
+    math::vector_f2c<double>(pc_gradients, it->force, i, -1.0 * force_to_mm);
     DEBUG(15, "Force: " << math::v2s(it->force));
     if (it->is_polarisable) {
       ++i; // COS gradients live directly past the corresponding MM gradients
       DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
-      math::vector_f2c(pc_gradients, it->cos_force, i, -1.0 * force_to_mm);
+      math::vector_f2c<double>(pc_gradients, it->cos_force, i, -1.0 * force_to_mm);
       DEBUG(15, "Force " << math::v2s(it->cos_force));
     }
     ++i;

@@ -36,28 +36,57 @@ namespace interaction {
     virtual ~Torch_Interaction() = default;
 
     /**
-     * Loads up the model
+     * Initializes everything necessary
      */
-    int init(topology::Topology & topo,
+    virtual int init(topology::Topology & topo,
 		     configuration::Configuration & conf,
 		     simulation::Simulation & sim,
 		     std::ostream & os = std::cout,
 		     bool quiet = false) override;
 
+    /**
+     * Evaluates the Torch model and updates energies and forces
+     */
+    virtual int calculate_interactions(topology::Topology & topo,
+				               configuration::Configuration & conf,
+				               simulation::Simulation & sim) override;
 
     protected:
 
+      /**
+       * Loads and deserializes the model
+       */
       virtual int load_model();
+
+      /**
+       * Prepares the coordinates according to the atom selection scheme selected
+      */
+      virtual int prepare_coordinates(simulation::Simulation& sim) = 0;
+
+      /**
+       * Initializes tensors ready to go into the model
+      */
+      virtual int prepare_tensors(simulation::Simulation& sim) = 0;
       
       /**
        * Forward pass of the model loaded
        */
-      virtual void forward() = 0;
+      virtual int forward();
 
       /**
        * Backward pass of the model loaded
        */
-      virtual void backward() = 0;
+      virtual int backward();
+
+      /**
+       * Passes the energy back from Torch to Gromos
+      */
+      virtual int update_energy();
+
+      /**
+       * Passes the forces back from Torch to Gromos
+      */
+      virtual int update_forces();
 
       /**
        * Parameters on the model loaded
@@ -68,11 +97,6 @@ namespace interaction {
        * A representation of the model
        */
       torch::jit::script::Module module;
-
-      /**
-       * energy calculated by PyTorch
-       */
-      double energy;
 
   };
 
