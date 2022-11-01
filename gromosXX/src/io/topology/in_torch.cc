@@ -41,7 +41,6 @@ void io::In_Torch::read(topology::Topology& topo,
 void io::In_Torch::read_models(simulation::Simulation & sim)
 {
   std::vector<std::string> buffer = m_block["MODELS"];
-  std::cout << "Torch: Reading md.torch" << std::endl;
 
   if (!buffer.size()) {
     io::messages.add("TORCH requested but no models provided in Torch specification file.",

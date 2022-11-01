@@ -35,7 +35,7 @@ namespace interaction {
 		                           simulation::Simulation & sim,
 		                           std::ostream & os,
 		                           bool quiet) {
-                                    
+
     int err = load_model();
     if (err) return err;
 
@@ -47,6 +47,7 @@ namespace interaction {
       // Deserialize the ScriptModule from a file using torch::jit::load().
       module = torch::jit::load(model.filename);
     } catch (const c10::Error &e) {
+      io::messages.add("Unable to load / deserialize Torch model: " + model.filename, io::message::error);
       return 1;
     }
 

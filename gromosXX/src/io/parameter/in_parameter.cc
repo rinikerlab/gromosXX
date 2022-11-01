@@ -5722,6 +5722,7 @@ void io::In_Parameter::read_DFUNCT(simulation::Parameter & param, std::ostream &
     } // if block
 } // DFUNCT
 
+#ifdef WITH_TORCH
 /**
  * @section torch TORCH block
  * @snippet snippets/snippets.cc TORCH
@@ -5796,3 +5797,4 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
         block.get_final_messages();
     } // if block
 } // TORCH
+#endif

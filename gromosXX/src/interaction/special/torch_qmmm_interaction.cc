@@ -30,14 +30,14 @@
 
 namespace interaction {
 
-  Torch_QMMM_Interaction::Torch_QMMM_Interaction(const simulation::torch_model& model) : Torch_Interaction(model) { std::cout << "Torch: constructor: " << model.filename << std::endl; }
+  Torch_QMMM_Interaction::Torch_QMMM_Interaction(const simulation::torch_model& model) : Torch_Interaction(model) {}
 
-  Torch_QMMM_Interaction::~Torch_QMMM_Interaction() { std::cout << "Torch: destructor: " << model.filename << std::endl; }
+  Torch_QMMM_Interaction::~Torch_QMMM_Interaction() = default;
 
   int Torch_QMMM_Interaction::calculate_interactions(topology::Topology & topo,
 				                                     configuration::Configuration & conf,
 				                                     simulation::Simulation & sim) {
-    std::cout << "Torch: calculate: " << model.filename << std::endl;
+    
     return 0;
   }
 
