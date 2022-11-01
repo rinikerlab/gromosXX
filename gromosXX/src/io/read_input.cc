@@ -51,10 +51,23 @@ int io::read_input(io::Argument const & args,
   if (read_parameter(args, sim, os, quiet) != 0) return -1;
   if (check_parameter(sim) != 0) return -1;
 
-  if (read_topology(args, topo, sim, md_seq, os, quiet) != 0) return -1;
+  io::In_Topology it; // topology file reader will live here
+  if (read_topology(args, topo, sim, it, os, quiet) != 0) return -1;
+  if (read_perturbation_topology(args, topo, sim, os, quiet) != 0) return -1;
+  // initialize topology
+  topo.init(sim, os, quiet);
 
+  if(!quiet){
+      std::cout << std::internal << "\tReading Special\n";
+  }
   // read this before configuration, as it contains topological data...
   if (read_special(args, topo, conf, sim, os, quiet) != 0) return -1;
+
+  // create the algorithms (among them the forcefield!)
+  if(!quiet){
+      std::cout << std::internal << "\tCreating the algorithm sequence\n";
+  }
+  algorithm::create_md_sequence(md_seq, topo, sim, it, os, quiet);
 
   // error if no perturbed parameters were read from pttop or restraints
   if(!sim.param().perturbation.perturbed_par && sim.param().perturbation.perturbation){
@@ -196,13 +209,23 @@ int io::read_input_repex(io::Argument const & args,
     std::cout << std::internal << "\tReading Topology\n";
   }
 
-  if (read_topology(args, topo, sim, md_seq, os, quiet) != 0) return -1;
+  io::In_Topology it; // topology file reader will live here
+  if (read_topology(args, topo, sim, it, os, quiet) != 0) return -1;
+  if (read_perturbation_topology(args, topo, sim, os, quiet) != 0) return -1;
+  // initialize topology
+  topo.init(sim, os, quiet);
 
   if(!quiet){
       std::cout << std::internal << "\tReading Special\n";
   }
   // read this before configuration, as it contains topological data...
   if (read_special(args, topo, conf, sim, os, quiet) != 0) return -1;
+
+  // create the algorithms (among them the forcefield!)
+  if(!quiet){
+      std::cout << std::internal << "\tCreating the algorithm sequence\n";
+  }
+  algorithm::create_md_sequence(md_seq, topo, sim, it, os, quiet);
 
   // error if no perturbed parameters were read from pttop or restraints
   if(!sim.param().perturbation.perturbed_par && sim.param().perturbation.perturbation){
@@ -360,11 +383,11 @@ int io::read_parameter(io::Argument const & args,
 int io::read_topology(io::Argument const & args,
 		      topology::Topology & topo,
 		      simulation::Simulation & sim,
-		      algorithm::Algorithm_Sequence & md_seq,
+          io::In_Topology& it,
 		      std::ostream & os,
 		      bool quiet)
 {
-  io::igzstream topo_file, pttopo_file;
+  io::igzstream topo_file;
 
   topo_file.open(args[argname_topo].c_str());
     if (!topo_file.is_open()){
@@ -374,7 +397,7 @@ int io::read_topology(io::Argument const & args,
     return -1;
   }
 
-  io::In_Topology it(topo_file);
+  it.stream(topo_file); // sets the stream
   it.quiet = quiet;
 
   it.read(topo, sim.param(), os);
@@ -387,8 +410,18 @@ int io::read_topology(io::Argument const & args,
      io::messages.contains(io::message::critical))
     return -1;
 
+  return 0;
+}
 
-   if(args.count(argname_pttopo)<1 && sim.param().reeds.reeds > 0){
+int io::read_perturbation_topology(io::Argument const & args,
+		      topology::Topology & topo,
+		      simulation::Simulation & sim,
+		      std::ostream & os,
+		      bool quiet)
+{
+  io::igzstream pttopo_file;
+
+  if(args.count(argname_pttopo)<1 && sim.param().reeds.reeds > 0){
       io::messages.add("REEDS on but no perturbation topology specified",
 		       "read_input", io::message::critical);
       return -1;
@@ -428,12 +461,6 @@ int io::read_topology(io::Argument const & args,
 		     "read input", io::message::notice);
     }
   }
-
-  topo.init(sim, os, quiet);
-
-  // and create the algorithms
-  // (among them the forcefield!)
-  algorithm::create_md_sequence(md_seq, topo, sim, it, os, quiet);
 
   return 0;
 }

@@ -6,6 +6,8 @@
 #ifndef INCLUDED_READ_INPUT_H
 #define INCLUDED_READ_INPUT_H
 
+#include <io/topology/in_topology.h>
+
 namespace util
 {
   struct Replica_Data;
@@ -18,6 +20,7 @@ namespace io
    * calls
    * - read_parameter
    * - read_topology
+   * - read_perturbation_topology
    * - read_special
    * - read_configuration
    */
@@ -36,6 +39,7 @@ namespace io
    * read the rest of the input files necessary for the repex simulation.
    * calls
    * - read_topology
+   * - read_perturbation_topology
    * - read_special
    * - read_configuration
    */
@@ -64,14 +68,26 @@ namespace io
    );
 
   /**
-   * read in topology, perturbation topology, MD sequence
+   * read in topology
    */
   int read_topology
   (
    io::Argument const &args,
    topology::Topology &topo,
    simulation::Simulation & sim,
-   algorithm::Algorithm_Sequence &md_seq,
+   io::In_Topology& it,
+   std::ostream & os = std::cout,
+   bool quiet = false
+   );
+
+  /**
+   * read in perturbation topology
+   */
+  int read_perturbation_topology
+  (
+   io::Argument const &args,
+   topology::Topology &topo,
+   simulation::Simulation & sim,
    std::ostream & os = std::cout,
    bool quiet = false
    );
