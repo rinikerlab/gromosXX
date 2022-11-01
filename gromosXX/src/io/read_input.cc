@@ -51,6 +51,11 @@ int io::read_input(io::Argument const & args,
   if (read_parameter(args, sim, os, quiet) != 0) return -1;
   if (check_parameter(sim) != 0) return -1;
 
+  // Read in Topology
+  if(!quiet){
+    std::cout << std::internal << "\tReading Topology\n";
+  }
+
   io::In_Topology it; // topology file reader will live here
   if (read_topology(args, topo, sim, it, os, quiet) != 0) return -1;
   if (read_perturbation_topology(args, topo, sim, os, quiet) != 0) return -1;
