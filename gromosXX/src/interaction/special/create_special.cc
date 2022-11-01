@@ -67,6 +67,7 @@ int interaction::create_special(interaction::Forcefield & ff,
   }
 
   // Torch
+#ifdef WITH_TORCH
   if (param.torch.torch == simulation::torch_on) {
     if (!quiet) {
       os << "\tTORCH\n";
@@ -81,6 +82,7 @@ int interaction::create_special(interaction::Forcefield & ff,
       }
     }
   }
+#endif
 
   // Position restraints / constraints
   if (param.posrest.posrest == simulation::posrest_on || 
