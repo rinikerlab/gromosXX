@@ -67,7 +67,7 @@ if(XTB)
 
     # check simple function call
     check_function_exists(xtb_getAPIVersion HAVE_XTBFUNCTION)
-    if(NOT HAVE_XTB_H)
+    if(NOT HAVE_XTBFUNCTION)
     message(FATAL_ERROR "xtb_getAPIVersion not found - provided path to xtb invalid")
     endif()
 endif()

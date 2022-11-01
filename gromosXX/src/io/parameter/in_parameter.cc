@@ -110,6 +110,9 @@ void io::In_Parameter::read(simulation::Parameter &param,
   read_SYMRES(param);
   read_AMBER(param);
   read_DFUNCT(param);
+#ifdef WITH_TORCH
+  read_TORCH(param);
+#endif
 
   read_known_unsupported_blocks();
 
@@ -5718,3 +5721,78 @@ void io::In_Parameter::read_DFUNCT(simulation::Parameter & param, std::ostream &
         block.get_final_messages();
     } // if block
 } // DFUNCT
+
+/**
+ * @section torch TORCH block
+ * @snippet snippets/snippets.cc TORCH
+
+ */
+void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & os ) {
+    DEBUG(8, "read TORCH");
+
+    std::stringstream exampleblock;
+    // lines starting with 'exampleblock<<"' and ending with '\n";' (spaces don't matter)
+    // will be used to generate snippets that can be included in the doxygen doc;
+    // the first line is the tag
+    exampleblock << "TORCH\n";
+    exampleblock << "# TORCH 0..1 use TORCH interface\n";
+    exampleblock << "#    0: TORCH interface off\n";
+    exampleblock << "#    1: TORCH interface on\n";
+    exampleblock << "# DEVICE 0..2 which architecture should be used.\n";
+    exampleblock << "#    0: autodetect (default)\n";
+    exampleblock << "#    1: CPU\n";
+    exampleblock << "#    2: GPU\n";
+    exampleblock << "#\n";
+    exampleblock << "# TORCH  DEVICE\n";
+    exampleblock << "      1       2\n";
+    exampleblock << "END\n";
+
+    std::string blockname = "TORCH";
+    Block block (blockname, exampleblock.str());
+    if (block.read_buffer(m_block[blockname], false) == 0) {
+        block_read.insert(blockname);
+
+        unsigned torch, device;
+
+        block.get_next_parameter("TORCH", torch, "", "0,1");
+        block.get_next_parameter("DEVICE", device, "", "0,1,2", true);
+
+        if (block.error()) {
+          block.get_final_messages();
+          return;
+        }
+
+        switch (torch) {
+          case 0:
+              param.torch.torch = simulation::torch_off;
+              break;
+          case 1:
+              param.torch.torch = simulation::torch_on;
+              break;
+          default:
+              break;
+        }
+
+        DEBUG(1, "param.torch:");
+        DEBUG(1, param.torch.torch);
+
+        switch (device) {
+          case 0:
+              param.torch.device = simulation::autodetect;
+              break;
+          case 1:
+              param.torch.device = simulation::cpu;
+              break;
+          case 2:
+              param.torch.device = simulation::gpu;
+              break;
+          default:
+              break;
+        }
+
+        DEBUG(1, "param.torch.device:");
+        DEBUG(1, param.torch.device);
+
+        block.get_final_messages();
+    } // if block
+} // TORCH

@@ -27,7 +27,7 @@ public:
     /**
      * Deallocates resources
     */
-    ~Torch_QMMM_Intspecial();
+    virtual ~Torch_QMMM_Intspecial();
 
 private:
 

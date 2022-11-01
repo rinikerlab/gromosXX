@@ -123,6 +123,38 @@ namespace simulation
     dfunct_cycloaddition
   };
   /**
+   * @enum torch_enum
+   * do TORCH, or not
+   */
+  enum torch_enum {
+    /**
+     * disable TORCH
+     */
+    torch_off = 0,
+    /**
+     * enable TORCH
+     */
+    torch_on = 1,
+  };
+  /**
+   * @enum torch_device_enum
+   * which device to run PyTorch on
+   */
+  enum torch_device_enum {
+    /**
+     * autodetect architecture
+     */
+    autodetect = 0,
+    /**
+     * run on CPU
+     */
+    cpu = 1,
+    /**
+     * run on GPU
+     */
+    gpu = 2
+  };
+  /**
    * @enum special_loop_enum
    * special solvent loop
    */
@@ -4346,6 +4378,20 @@ namespace simulation
        */
       double force;
     } dfunct;
+
+    struct torch_struct {
+
+      torch_struct() : torch(torch_off), device (autodetect) {}
+
+      /**
+       * torch enum 
+       */
+      torch_enum torch;
+      /**
+       * index of first atom involved in the potential
+       */
+      torch_device_enum device;
+    } torch;
     
     /**
      A struct to mark parts of the code as "under development"

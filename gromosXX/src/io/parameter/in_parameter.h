@@ -385,6 +385,10 @@ namespace io {
      * read DFUNCT block 
      */
     void read_DFUNCT(simulation::Parameter &param, std::ostream & os = std::cout);
+    /**
+     * read TORCH block
+     */
+    void read_TORCH(simulation::Parameter &param, std::ostream & os = std::cout);
   };
 
 } // io

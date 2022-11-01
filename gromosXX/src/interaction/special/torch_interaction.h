@@ -23,22 +23,33 @@ namespace interaction {
   public:
 
     /**
-     * Constructor
+     * Constructor - Initializes name and timer of the Interaction
      * 
      */
     Torch_Interaction(const std::string& name) : Interaction(name) {}
 
     /**
-     * Destructor
+     * Destructor - Nothing to clean up
      * 
      */
     virtual ~Torch_Interaction() = default;
 
-    private:
+    protected:
 
-      torch::Tensor test_tensor;
+      /**
+       * Forward pass of the model loaded
+       */
+      virtual void forward() = 0;
 
-      torch::Tensor test_tensor_2;
+      /**
+       * Backward pass of the model loaded
+       */
+      virtual void backward() = 0;
+
+      /**
+       * energy calculated by PyTorch
+       */
+      double energy;
 
   };
 
