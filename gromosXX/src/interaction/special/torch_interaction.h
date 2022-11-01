@@ -12,6 +12,7 @@
 
 #include "../../stdheader.h"
 #include "../../interaction/interaction.h"
+#include "../../simulation/parameter.h"
 
 namespace interaction {
 
@@ -26,13 +27,14 @@ namespace interaction {
      * Constructor - Initializes name and timer of the Interaction
      * 
      */
-    Torch_Interaction(const std::string& name) : Interaction(name) {}
+    Torch_Interaction(const simulation::torch_model& model) : Interaction("Torch"), model(model) {}
 
     /**
      * Destructor - Nothing to clean up
      * 
      */
     virtual ~Torch_Interaction() = default;
+
 
     protected:
 
@@ -45,6 +47,11 @@ namespace interaction {
        * Backward pass of the model loaded
        */
       virtual void backward() = 0;
+
+      /**
+       * Information on the model loaded
+       */
+      simulation::torch_model model;
 
       /**
        * energy calculated by PyTorch

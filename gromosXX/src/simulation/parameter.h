@@ -12,7 +12,6 @@
 
 namespace simulation
 {
-
   /**
    * @enum constr_enum
    * constraints enumeration.
@@ -154,7 +153,7 @@ namespace simulation
      */
     torch_gpu = 2
   };
-/**
+  /**
    * @enum torch_atom_enum
    * which atoms will be sent to PyTorch
    */
@@ -172,6 +171,29 @@ namespace simulation
      */
     torch_custom = 2
   };
+  /**
+   * @struct torch_model
+   * stores information on a Torch model
+   */
+  struct torch_model {
+
+    /*
+     * Default constructor
+     */
+    torch_model() : atoms(torch_all) {}
+    /**
+     * Pass which atoms to send and which model to load
+    */
+    torch_model(torch_atom_enum atoms, const std::string& filename) : atoms(atoms), filename(filename) {} 
+    /**
+     * which atoms go to the model
+     */
+    torch_atom_enum atoms;
+    /**
+     * the name of the PyTorch model
+     */
+    std::string filename;
+    };
   /**
    * @enum special_loop_enum
    * special solvent loop
@@ -4410,32 +4432,10 @@ namespace simulation
        * device all models will run on
        */
       torch_device_enum device;
-
-      struct torch_model_struct {
-
-        /*
-         * Default constructor
-         */
-        torch_model_struct() : atoms(torch_all) {}
-        /**
-         * Pass which atoms to send and which model to load
-        */
-        torch_model_struct(torch_atom_enum atoms, const std::string& filename) : atoms(atoms), filename(filename) {}
-
-        /**
-         * which atoms go to the model
-         */
-        torch_atom_enum atoms;
-        /**
-         * the name of the PyTorch model
-         */
-        std::string filename;
-      };
-
       /**
        * all models loaded
        */
-      std::vector<torch_model_struct> models;
+      std::vector<torch_model> models;
     } torch;
 #endif    
     /**

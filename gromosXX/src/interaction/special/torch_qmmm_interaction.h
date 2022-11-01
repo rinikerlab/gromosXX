@@ -9,6 +9,7 @@
 
 #include "../../stdheader.h"
 #include "../../interaction/special/torch_interaction.h"
+#include "../../simulation/parameter.h"
 
 namespace interaction {
 
@@ -21,17 +22,29 @@ public:
 
     /**
      * Initializes the interaction
-    */
-    Torch_QMMM_Interaction(const std::string& name);
+     */
+    Torch_QMMM_Interaction(const simulation::torch_model& model);
 
     /**
      * Deallocates resources
     */
     virtual ~Torch_QMMM_Interaction();
 
+    int init(topology::Topology & topo,
+		     configuration::Configuration & conf,
+		     simulation::Simulation & sim,
+		     std::ostream & os = std::cout,
+		     bool quiet = false) override;
+
+    int calculate_interactions(topology::Topology & topo,
+				               configuration::Configuration & conf,
+				               simulation::Simulation & sim) override;
+
 private:
 
+    virtual void forward() override;
 
+    virtual void backward() override;
 
 };
 
