@@ -81,12 +81,12 @@ namespace interaction {
       /**
        * Passes the energy back from Torch to Gromos
       */
-      virtual int update_energy();
+      virtual int update_energy() = 0;
 
       /**
        * Passes the forces back from Torch to Gromos
       */
-      virtual int update_forces();
+      virtual int update_forces() = 0;
 
       /**
        * Parameters on the model loaded

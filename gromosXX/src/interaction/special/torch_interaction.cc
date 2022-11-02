@@ -36,6 +36,7 @@ namespace interaction {
 		                           simulation::Simulation & sim,
 		                           std::ostream & os,
 		                           bool quiet) {
+    DEBUG(15, "Initializing Torch interaction");
     int err = load_model();
     if (err) return err;
 
@@ -43,6 +44,7 @@ namespace interaction {
   }
 
   int Torch_Interaction::load_model() {
+    DEBUG(15, "Loading Torch model");
     int err = 0;
     try {
       // Deserialize the ScriptModule from a file using torch::jit::load().
@@ -53,12 +55,15 @@ namespace interaction {
       return err;
     }
 
+    DEBUG(15, "Torch model successfully loaded");
+
     return err;
   }
 
   int Torch_Interaction::calculate_interactions(topology::Topology & topo,
 				                                     configuration::Configuration & conf,
 				                                     simulation::Simulation & sim) {
+    DEBUG(15, "Calculating Torch Interaction");
     int err = prepare_input(sim);
     if (err) return err;
 
@@ -79,19 +84,5 @@ namespace interaction {
 
     return err;
   }
-
-  int Torch_Interaction::forward() {
-    std::cout << "Torch: Forward pass" << std::endl; 
-    return 0; 
-  }
-
-  int Torch_Interaction::backward() {
-    std::cout << "Torch: Backward pass" << std::endl;
-    return 0; 
-  }
-
-  int Torch_Interaction::update_energy() { return 0; }
-
-  int Torch_Interaction::update_forces() { return 0; }
 
 } // namespace interaction

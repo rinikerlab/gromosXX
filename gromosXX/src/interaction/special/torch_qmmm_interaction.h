@@ -9,8 +9,11 @@
 
 #include "../../stdheader.h"
 #include "../../interaction/qmmm/qm_zone.h"
+#include "../../interaction/qmmm/qmmm_interaction.h"
 #include "../../interaction/special/torch_interaction.h"
 #include "../../simulation/parameter.h"
+#include "../../simulation/simulation.h"
+#include "../../configuration/configuration.h"
 
 #include <vector>
 
@@ -45,6 +48,13 @@ public:
 		     simulation::Simulation & sim,
 		     std::ostream & os = std::cout,
 		     bool quiet = false) override;
+
+    /**
+     * Evaluates the Torch model and updates energies and forces
+     */
+    virtual int calculate_interactions(topology::Topology & topo,
+				               configuration::Configuration & conf,
+				               simulation::Simulation & sim) override;
 
 private:
 
@@ -89,6 +99,16 @@ private:
     virtual int backward() override;
 
     /**
+     * Passes the energy back from Torch to Gromos
+    */
+    virtual int update_energy() override;
+
+    /**
+     * Passes the forces back from Torch to Gromos
+    */
+    virtual int update_forces() override;
+
+    /**
      * Computes the number of charges like in QM_Worker.cc
     */
     virtual int get_num_charges(const simulation::Simulation& sim);
@@ -97,6 +117,11 @@ private:
      * A (non-owning) pointer to the QM zone
     */
     QM_Zone* qm_zone_ptr;
+
+    /**
+     * A (non_owning) pointer to the QMMM interaction
+    */
+    QMMM_Interaction* qmmm_ptr;
 
     /**
      * The size of the QM zone (QM atoms + QM link atoms)

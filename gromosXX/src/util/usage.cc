@@ -155,6 +155,11 @@ void util::get_usage(util::Known const &knowns, std::string &usage, std::string 
     usage += "\t# QM/MM specification file\n";
     usage += "\t# @qmmm       filename\n\n";
   }
+
+  if (knowns.count("torch")) {
+    usage += "\t# Torch specification file\n";
+    usage += "\t# @torch       filename\n\n";
+  }
   
   if (knowns.count("repout")){
     usage += "\t# output file for replica exchange\n";

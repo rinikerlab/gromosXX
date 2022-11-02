@@ -30,6 +30,7 @@
 #include "../../util/debug.h"
 
 #include <tuple>
+#include <cassert>
 
 #include <torch/torch.h>
 
@@ -49,6 +50,7 @@ namespace interaction {
 		                           simulation::Simulation & sim,
 		                           std::ostream & os,
 		                           bool quiet) {
+    DEBUG(15, "Initializing Torch QM/MM Interaction");
     int err = Torch_Interaction::init(topo, conf, sim, os, quiet);
     if (err) return err;
 
@@ -61,16 +63,30 @@ namespace interaction {
     return err;
   }
 
+  int Torch_QMMM_Interaction::calculate_interactions(topology::Topology & topo,
+				               configuration::Configuration & conf,
+				               simulation::Simulation & sim) {
+      DEBUG(15, "Calculating Torch QM/MM Interaction");
+      // call parent class implementation
+      int err = Torch_Interaction::calculate_interactions(topo, conf, sim);
+      if (err) return err;
+
+      // write out new QM zone (energies, forces, compute virial along the way)
+      DEBUG(15, "Writing the QM zone from Torch QM/MM Interaction");
+      qmmm_ptr->write_qm_data(topo, conf, sim);
+      return err;
+    }
+
   int Torch_QMMM_Interaction::init_qm_zone() {
     int err = 0;
-    QMMM_Interaction* qmmm = QMMM_Interaction::pointer();
-    if (qmmm == nullptr) {
+    qmmm_ptr = QMMM_Interaction::pointer();
+    if (qmmm_ptr == nullptr) {
       io::messages.add("Unable to get QMMM interaction in Torch QM/MM Interaction set-up",
                         "Torch_QMMM_Interaction", io::message::error);
       err = 1;
       return err;
     }
-    qm_zone_ptr = qmmm->qm_zone();
+    qm_zone_ptr = qmmm_ptr->qm_zone();
     if (qm_zone_ptr == nullptr) {
       io::messages.add("Unable to get QM zone in Torch QM/MM Interaction set-up",
                         "Torch_QMMM_Interaction", io::message::error);
@@ -78,6 +94,7 @@ namespace interaction {
       return err;
     }
 
+    // number of atoms in QM zone should not change over simulation
     natoms = qm_zone_ptr->qm.size() + qm_zone_ptr->link.size();
 
     return err;
@@ -85,6 +102,7 @@ namespace interaction {
 
   int Torch_QMMM_Interaction::prepare_input(const simulation::Simulation& sim) {
     // get size of QM zone and MM zone
+    assert(static_cast<int>(qm_zone_ptr->qm.size() + qm_zone_ptr->link.size()) == natoms);
     ncharges = get_num_charges(sim);
 
     // put coordinates into one-dimensional vectors
@@ -146,47 +164,48 @@ namespace interaction {
   int Torch_QMMM_Interaction::prepare_mm_atoms() {
     int err = 0;
 
-   mm_atomic_numbers.resize(ncharges);
-   mm_charges.resize(ncharges);
-   mm_positions.resize(ncharges * 3);
+    mm_atomic_numbers.resize(ncharges);
+    mm_charges.resize(ncharges);
+    mm_positions.resize(ncharges * 3);
 
-  DEBUG(15, "Transfering point charges to Torch");
+    DEBUG(15, "Transfering point charges to Torch");
 
-  unsigned int i = 0; // iterate over atoms - keep track of the offset for Fortran arrays
-  for (std::set<MM_Atom>::const_iterator
-         it = qm_zone_ptr->mm.begin(), to = qm_zone_ptr->mm.end(); it != to; ++it) {
-    // memory layout of point charge arrays: 
-    // numbers (1d), charges (1d), point_charges (3d): one-dimensional arrays 
-    // COS numbers, charges, cartesian coordinates are after MM numbers, charges, cartesian coordinates
-    if (it->is_polarisable) {
-      // MM atom minus COS
-      DEBUG(15, it->index << " " << it->atomic_number << " " 
-        << (it->charge - it->cos_charge) << " " << math::v2s(it->pos));
-      mm_atomic_numbers[i] = it->atomic_number;
-      mm_charges[i] = (it->charge - it->cos_charge);
-      math::vector_c2f<float>(mm_positions, it->pos, i);
-      ++i;
-      // COS
-      DEBUG(15, it->index << " " << it->atomic_number << " " 
-        << it->cos_charge << " " << math::v2s((it->pos + it->cosV)));
-      mm_atomic_numbers[i] = it->atomic_number;
-      mm_charges[i] = it->cos_charge;
-      math::vector_c2f<float>(mm_positions, it->cosV, i);
-      ++i;
+    unsigned int i = 0; // iterate over atoms - keep track of the offset for Fortran arrays
+    for (std::set<MM_Atom>::const_iterator
+           it = qm_zone_ptr->mm.begin(), to = qm_zone_ptr->mm.end(); it != to; ++it) {
+      // memory layout of point charge arrays: 
+      // numbers (1d), charges (1d), point_charges (3d): one-dimensional arrays 
+      // COS numbers, charges, cartesian coordinates are after MM numbers, charges, cartesian coordinates
+      if (it->is_polarisable) {
+        // MM atom minus COS
+        DEBUG(15, it->index << " " << it->atomic_number << " " 
+          << (it->charge - it->cos_charge) << " " << math::v2s(it->pos));
+        mm_atomic_numbers[i] = it->atomic_number;
+        mm_charges[i] = (it->charge - it->cos_charge);
+        math::vector_c2f<float>(mm_positions, it->pos, i);
+        ++i;
+        // COS
+        DEBUG(15, it->index << " " << it->atomic_number << " " 
+          << it->cos_charge << " " << math::v2s((it->pos + it->cosV)));
+        mm_atomic_numbers[i] = it->atomic_number;
+        mm_charges[i] = it->cos_charge;
+        math::vector_c2f<float>(mm_positions, it->cosV, i);
+        ++i;
+      }
+      else {
+        DEBUG(15, it->index << " " << it->atomic_number << " " 
+          << it->charge << " " << math::v2s(it->pos));
+        mm_atomic_numbers[i] = it->atomic_number;
+        mm_charges[i] = it->charge;
+        math::vector_c2f<float>(mm_positions, it->pos, i);
+        ++i;
+      }
     }
-    else {
-      DEBUG(15, it->index << " " << it->atomic_number << " " 
-        << it->charge << " " << math::v2s(it->pos));
-      mm_atomic_numbers[i] = it->atomic_number;
-      mm_charges[i] = it->charge;
-      math::vector_c2f<float>(mm_positions, it->pos, i);
-      ++i;
-    }
-  }
     return err;
   }
 
   int Torch_QMMM_Interaction::build_tensors(const simulation::Simulation& sim) {
+    DEBUG(15, "Building tensors");
     int err = 0;
     qm_atomic_numbers_tensor = torch::from_blob(qm_atomic_numbers.data(), {natoms}, sim.param().torch.options_int);
     qm_positions_tensor      = torch::from_blob(qm_positions.data(), {natoms, 3}, sim.param().torch.options_float_gradient);
@@ -194,46 +213,81 @@ namespace interaction {
     mm_charges_tensor        = torch::from_blob(mm_charges.data(), {ncharges}, sim.param().torch.options_float_no_gradient);
     mm_positions_tensor      = torch::from_blob(mm_positions.data(), {ncharges, 3}, sim.param().torch.options_float_gradient);
 
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << "torch::Tensor from std::vector<float> QM:" << std::endl;
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << "Atomic numbers QM:" << std::endl;
-    std::cout << qm_atomic_numbers_tensor << std::endl;
-    std::cout << "Atomic positions QM:" << std::endl;
-    std::cout << qm_positions_tensor << std::endl;
-
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << "torch::Tensor from std::vector<float> MM:" << std::endl;
-    std::cout << "-----------------------------------------" << std::endl;
-    std::cout << "Atomic numbers MM:" << std::endl;
-    std::cout << mm_atomic_numbers_tensor << std::endl;
-    std::cout << "Atomic charges MM:" << std::endl;
-    std::cout << mm_charges_tensor << std::endl;
-    std::cout << "Atomic positions MM:" << std::endl;
-    std::cout << mm_positions_tensor << std::endl;
-
     return err;
   }
 
   int Torch_QMMM_Interaction::forward() {
+    DEBUG(15, "Calling forward on the model");
     int err = 0;
-    std::tuple<torch::Tensor,torch::Tensor> input_tuple(qm_positions_tensor, qm_positions_tensor);
+    std::tuple<torch::Tensor,torch::Tensor,torch::Tensor,torch::Tensor,torch::Tensor> input_tuple(qm_atomic_numbers_tensor, qm_positions_tensor, mm_atomic_numbers_tensor, mm_charges_tensor, mm_positions_tensor);
     energy_tensor = module.forward({input_tuple}).toTensor();
-    std::cout << "Energy tensor: " << std::endl;
-    std::cout << energy_tensor << std::endl;
     return err;
   }
 
   int Torch_QMMM_Interaction::backward() {
+    DEBUG(15, "Calling backward on the model");
     int err = 0;
     energy_tensor.backward();
     qm_gradient_tensor = qm_positions_tensor.grad();
     mm_gradient_tensor = mm_positions_tensor.grad();
-    std::cout << "QM gradient tensor: " << std::endl;
-    std::cout << qm_gradient_tensor << std::endl;
-    std::cout << "MM gradient tensor: " << std::endl;
-    std::cout << mm_gradient_tensor << std::endl;
     return err;
+  }
+
+  int Torch_QMMM_Interaction::update_energy() {
+    double energy = static_cast<double>(energy_tensor.item<float>());
+    qm_zone_ptr->QM_energy() += energy;
+    DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol to QM zone (" << qm_zone_ptr->QM_energy() << " kJ / mol total)");
+    return 0; 
+  }
+
+  int Torch_QMMM_Interaction::update_forces() {
+    // QM atoms and QM links
+    unsigned qm_atom = 0;
+    // Parse QM atoms
+    for (std::set<QM_Atom>::iterator
+           it = qm_zone_ptr->qm.begin(), to = qm_zone_ptr->qm.end(); it != to; ++it) {
+      DEBUG(15, "Parsing gradients of QM atom " << it->index);
+      for (size_t dim = 0; dim < 3; ++dim) {
+        // forces = negative gradient (!)
+        it->force[dim] += -1.0 * static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>());
+      }
+      DEBUG(15, "Force: " << math::v2s(it->force));
+      ++qm_atom;
+    }
+    // Parse capping atoms (index i keeps running...)
+    for (std::set<QM_Link>::iterator
+           it = qm_zone_ptr->link.begin(), to = qm_zone_ptr->link.end(); it != to; ++it) {
+      DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-" << it->mm_index);
+      for (size_t dim = 0; dim < 3; ++dim) {
+        // forces = negative gradient (!)
+        it->force[dim] += -1.0 * static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>());
+      }
+      DEBUG(15, "Force: " << math::v2s(it->force));
+      ++qm_atom;
+    }
+
+    // Parse MM atoms
+    unsigned int mm_atom = 0;
+    for (std::set<MM_Atom>::iterator
+           it = qm_zone_ptr->mm.begin(), to = qm_zone_ptr->mm.end(); it != to; ++it) {
+      DEBUG(15,"Parsing gradient of MM atom " << it->index);
+      for (size_t dim = 0; dim < 3; ++dim) {
+        // forces = negative gradient (!)
+        it->force[dim] += -1.0 * static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>());
+      }
+      DEBUG(15, "Force: " << math::v2s(it->force));
+      if (it->is_polarisable) {
+        ++mm_atom; // COS gradients live directly past the corresponding MM gradients
+        DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
+        for (size_t dim = 0; dim < 3; ++dim) {
+          it->cos_force[dim] += -1.0 * static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>());
+        }
+        DEBUG(15, "Force " << math::v2s(it->cos_force));
+      }
+      ++mm_atom;
+    }
+    
+    return 0; 
   }
 
   int Torch_QMMM_Interaction::get_num_charges(const simulation::Simulation& sim) {
