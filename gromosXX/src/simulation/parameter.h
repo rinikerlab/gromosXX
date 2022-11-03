@@ -14,8 +14,6 @@
 #include <torch/torch.h>
 #endif
 
-#include "../simulation/multibath.h"
-
 namespace simulation
 {
   /**
@@ -178,6 +176,24 @@ namespace simulation
     torch_custom = 2
   };
   /**
+   * @enum torch_precision_enum
+   * precision of the Torch model
+   */
+  enum torch_precision_enum {
+    /**
+     * 16-bit precision
+     */
+    torch_float16 = 0,
+    /**
+     * 32-bit precision
+     */
+    torch_float32 = 1,
+    /**
+     * 64-bit precision
+     */
+    torch_float64 = 2
+  };
+  /**
    * @struct torch_model
    * stores information on a Torch model
    */
@@ -186,9 +202,10 @@ namespace simulation
     /**
      * Pass which atoms to send and which model to load
     */
-    torch_model(torch_atom_enum atoms, const std::string& filename, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
+    torch_model(torch_atom_enum atoms, const std::string& filename, torch_precision_enum precision, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
       atoms(atoms), 
       filename(filename), 
+      precision(precision),
       unit_factor_length(unit_factor_length), 
       unit_factor_energy(unit_factor_energy), 
       unit_factor_force(unit_factor_force), 
@@ -201,6 +218,10 @@ namespace simulation
      * the name of the PyTorch model
      */
     std::string filename;
+    /**
+     * numerical precision pf the Torch model
+    */
+    torch_precision_enum precision,
      /**
      * factor to convert the Torch length unit to the GROMOS one
      */

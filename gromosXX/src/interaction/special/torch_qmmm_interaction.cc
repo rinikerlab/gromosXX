@@ -1,5 +1,5 @@
 /**
- * @file torch_interaction.cc
+ * @file torch_qmmm_interaction.cc
  * torch
  *
  */
@@ -7,27 +7,27 @@
 #include "../../stdheader.h"
 
 #include "../../algorithm/algorithm.h"
+#include "../../topology/topology.h"
+#include "../../simulation/simulation.h"
+#include "../../simulation/parameter.h"
 #include "../../configuration/configuration.h"
 #include "../../interaction/interaction.h"
-#include "../../simulation/parameter.h"
-#include "../../simulation/simulation.h"
-#include "../../topology/topology.h"
 
-#include "../../interaction/interaction_types.h"
-#include "../../math/gmath.h"
 #include "../../math/periodicity.h"
+#include "../../math/gmath.h"
+#include "../../interaction/interaction_types.h"
 
-#include "../../interaction/qmmm/mm_atom.h"
+#include "../../interaction/qmmm/qmmm_interaction.h"
+#include "../../interaction/qmmm/qm_zone.h"
 #include "../../interaction/qmmm/qm_atom.h"
 #include "../../interaction/qmmm/qm_link.h"
-#include "../../interaction/qmmm/qm_zone.h"
-#include "../../interaction/qmmm/qmmm_interaction.h"
+#include "../../interaction/qmmm/mm_atom.h"
 
 #include "../../interaction/special/torch_interaction.h"
 #include "../../interaction/special/torch_qmmm_interaction.h"
 
-#include "../../util/debug.h"
 #include "../../util/template_split.h"
+#include "../../util/debug.h"
 
 #include <cassert>
 #include <tuple>
@@ -256,7 +256,7 @@ int Torch_QMMM_Interaction::backward() {
   return err;
 }
 
-int Torch_QMMM_Interaction::get_energy() {
+int Torch_QMMM_Interaction::get_energy() const {
   double energy = static_cast<double>(energy_tensor.item<float>()) *
                   model.unit_factor_energy;
   qm_zone_ptr->QM_energy() +=
@@ -267,7 +267,7 @@ int Torch_QMMM_Interaction::get_energy() {
   return 0;
 }
 
-int Torch_QMMM_Interaction::get_forces() {
+int Torch_QMMM_Interaction::get_forces() const {
   // QM atoms and QM links
   unsigned qm_atom = 0;
   // Parse QM atoms
@@ -337,7 +337,7 @@ int Torch_QMMM_Interaction::get_forces() {
 
 int Torch_QMMM_Interaction::write_data(topology::Topology &topo,
                                        configuration::Configuration &conf,
-                                       const simulation::Simulation &sim) {
+                                       const simulation::Simulation &sim) const {
   int err = 0;
   // write out new QM zone (energies, forces, compute virial along the way)
   DEBUG(15, "Writing the QM zone from Torch QM/MM Interaction");
@@ -345,7 +345,7 @@ int Torch_QMMM_Interaction::write_data(topology::Topology &topo,
   return err;
 }
 
-int Torch_QMMM_Interaction::get_num_charges(const simulation::Simulation &sim) {
+int Torch_QMMM_Interaction::get_num_charges(const simulation::Simulation &sim) const {
   int num_charges = 0;
   switch (sim.param().qmmm.qmmm) {
   case simulation::qmmm_mechanical: {

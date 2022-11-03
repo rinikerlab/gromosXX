@@ -10,9 +10,9 @@
 
 #include <torch/torch.h>
 
+#include "../../stdheader.h"
 #include "../../interaction/interaction.h"
 #include "../../simulation/parameter.h"
-#include "../../stdheader.h"
 
 namespace interaction {
 
@@ -79,19 +79,19 @@ protected:
   /**
    * Gets energy from Torch
    */
-  virtual int get_energy() = 0;
+  virtual int get_energy() const = 0;
 
   /**
    * Gets forces from Torch
    */
-  virtual int get_forces() = 0;
+  virtual int get_forces() const = 0;
 
   /**
    * Saves the data to GROMOS
    */
   virtual int write_data(topology::Topology &topo,
                          configuration::Configuration &conf,
-                         const simulation::Simulation &sim) = 0;
+                         const simulation::Simulation &sim) const = 0;
 
   /**
    * Parameters of the model loaded

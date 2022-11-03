@@ -1,5 +1,5 @@
 /**
- * @file torch_qmmm_interaction.cc
+ * @file torch_qmmm_interaction.h
  * torch_qmmm_interaction
  *
  */
@@ -7,13 +7,13 @@
 #ifndef INCLUDED_TORCH_QMMM_INTERACTION_H
 #define INCLUDED_TORCH_QMMM_INTERACTION_H
 
-#include "../../configuration/configuration.h"
+#include "../../stdheader.h"
 #include "../../interaction/qmmm/qm_zone.h"
 #include "../../interaction/qmmm/qmmm_interaction.h"
 #include "../../interaction/special/torch_interaction.h"
 #include "../../simulation/parameter.h"
 #include "../../simulation/simulation.h"
-#include "../../stdheader.h"
+#include "../../configuration/configuration.h"
 
 #include <vector>
 
@@ -93,24 +93,24 @@ private:
   /**
    * Gets energy from Torch
    */
-  virtual int get_energy() override;
+  virtual int get_energy() const override;
 
   /**
    * Gets forces from Torch
    */
-  virtual int get_forces() override;
+  virtual int get_forces() const override;
 
   /**
    * Saves the data to GROMOS
    */
   virtual int write_data(topology::Topology &topo,
                          configuration::Configuration &conf,
-                         const simulation::Simulation &sim) override;
+                         const simulation::Simulation &sim) const override;
 
   /**
    * Computes the number of charges like in QM_Worker.cc
    */
-  virtual int get_num_charges(const simulation::Simulation &sim);
+  virtual int get_num_charges(const simulation::Simulation &sim) const;
 
   /**
    * A (non-owning) pointer to the QM zone
