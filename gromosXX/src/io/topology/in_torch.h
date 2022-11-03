@@ -19,32 +19,31 @@
 
 namespace io {
 
-  /**
-   * @class In_Torch
-   * reads in a Torch specification file
-   */
-  class In_Torch : public GInStream {
+/**
+ * @class In_Torch
+ * reads in a Torch specification file
+ */
+class In_Torch : public GInStream {
 
-  public:
-    /**
-     * Default constructor.
-     */
-    In_Torch() {}
-    /**
-     * Constructor.
-     */
-    In_Torch(std::istream& is) : GInStream(is) { readStream(); };
-    /**
-     * Read in a Torch specification file.
-     */
-    void read(topology::Topology &topo,
-	      simulation::Simulation & sim,
-	      std::ostream & os = std::cout);
-    /**
-     * Reads in the models
-     */
-    void read_models(simulation::Simulation & sim);
-  };
-} // io
+public:
+  /**
+   * Default constructor.
+   */
+  In_Torch() {}
+  /**
+   * Constructor.
+   */
+  In_Torch(std::istream &is) : GInStream(is) { readStream(); };
+  /**
+   * Read in a Torch specification file.
+   */
+  void read(topology::Topology &topo, simulation::Simulation &sim,
+            std::ostream &os = std::cout);
+  /**
+   * Reads in the models
+   */
+  void read_models(simulation::Simulation &sim);
+};
+} // namespace io
 
 #endif // INCLUDED_IN_TORCH_H
