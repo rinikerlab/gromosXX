@@ -221,7 +221,7 @@ namespace simulation
     /**
      * numerical precision pf the Torch model
     */
-    torch_precision_enum precision,
+    torch_precision_enum precision;
      /**
      * factor to convert the Torch length unit to the GROMOS one
      */
@@ -4467,7 +4467,7 @@ namespace simulation
     struct torch_struct {
 
       torch_struct() : torch (torch_off), 
-                       device (torch_autodetect) {}
+                       device (torch::kCPU) {}
       /**
        * torch enum 
        */
@@ -4475,7 +4475,7 @@ namespace simulation
       /**
        * device all models will run on
        */
-      torch_device_enum device;
+      torch::Device device;
       /**
        * all models loaded
        */

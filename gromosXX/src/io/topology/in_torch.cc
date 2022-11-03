@@ -91,7 +91,7 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
       model_precision = simulation::torch_float16;
     }
     else if (precision == "float32") {
-      model_precision = simulation::torch_32;
+      model_precision = simulation::torch_float32;
     }
     else if (precision == "float64") {
       model_precision = simulation::torch_float64;

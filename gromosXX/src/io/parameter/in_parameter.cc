@@ -5782,7 +5782,7 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
         DEBUG(1, param.torch.torch);
 
         if (device == 0) {
-          param.torch.device = simulation::torch_autodetect;
+          param.torch.device = torch::kCPU;
           param.torch.options_float_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCPU)
@@ -5799,7 +5799,7 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
                                          .layout(torch::kStrided);
         }
         else if (device == 1) {
-          param.torch.device = simulation::torch_cpu;
+          param.torch.device = torch::kCPU;
           param.torch.options_float_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCPU)
@@ -5816,7 +5816,7 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
                                          .layout(torch::kStrided);                          
         }
         else if (device == 2) {
-          param.torch.device = simulation::torch_gpu;
+          param.torch.device = torch::kCUDA;
           param.torch.options_float_gradient = torch::TensorOptions() // specify data type, where the tensor will live, gradients, ...
                                          .dtype(torch::kFloat32)
                                          .device(torch::kCUDA)
@@ -5833,7 +5833,9 @@ void io::In_Parameter::read_TORCH(simulation::Parameter & param, std::ostream & 
                                          .layout(torch::kStrided);
         }
         else {
-          // error management
+          io::messages.add(
+          "Invalid device selection in Torch block: " +
+              device, "In_Parameter", io::message::error);
           return;
         }
 
