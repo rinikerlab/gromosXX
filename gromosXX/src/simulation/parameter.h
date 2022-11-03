@@ -181,14 +181,16 @@ namespace simulation
    */
   struct torch_model {
 
-    /*
-     * Default constructor
-     */
-    torch_model() : atoms(torch_all) {}
     /**
      * Pass which atoms to send and which model to load
     */
-    torch_model(torch_atom_enum atoms, const std::string& filename) : atoms(atoms), filename(filename) {} 
+    torch_model(torch_atom_enum atoms, const std::string& filename, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
+      atoms(atoms), 
+      filename(filename), 
+      unit_factor_length(unit_factor_length), 
+      unit_factor_energy(unit_factor_energy), 
+      unit_factor_force(unit_factor_force), 
+      unit_factor_charge(unit_factor_charge) {} 
     /**
      * which atoms go to the model
      */
@@ -197,6 +199,22 @@ namespace simulation
      * the name of the PyTorch model
      */
     std::string filename;
+     /**
+     * factor to convert the Torch length unit to the GROMOS one
+     */
+    double unit_factor_length;
+    /**
+     * factor to convert the Torch energy unit to the GROMOS one
+     */
+    double unit_factor_energy;
+    /**
+     * factor to convert the Torch energy unit to the GROMOS one
+     */
+    double unit_factor_force;
+    /**
+     * factor to convert the Torch charge unit to the GROMOS one
+     */
+    double unit_factor_charge;
     };
   /**
    * @enum special_loop_enum

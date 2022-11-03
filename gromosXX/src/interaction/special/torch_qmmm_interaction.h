@@ -33,12 +33,12 @@ public:
     /**
      * Initializes the interaction
      */
-    Torch_QMMM_Interaction(const simulation::torch_model& model);
+    Torch_QMMM_Interaction(const simulation::torch_model& model) : Torch_Interaction(model, "Torch QM/MM Interface") {}
 
     /**
      * Deallocates resources
     */
-    virtual ~Torch_QMMM_Interaction();
+    virtual ~Torch_QMMM_Interaction() = default;
 
     /**
      * Initializes everything necessary
@@ -48,13 +48,6 @@ public:
 		     simulation::Simulation & sim,
 		     std::ostream & os = std::cout,
 		     bool quiet = false) override;
-
-    /**
-     * Evaluates the Torch model and updates energies and forces
-     */
-    virtual int calculate_interactions(topology::Topology & topo,
-				               configuration::Configuration & conf,
-				               simulation::Simulation & sim) override;
 
 private:
 
@@ -99,14 +92,21 @@ private:
     virtual int backward() override;
 
     /**
-     * Passes the energy back from Torch to Gromos
+     * Gets energy from Torch
     */
-    virtual int update_energy() override;
+    virtual int get_energy() override;
 
     /**
-     * Passes the forces back from Torch to Gromos
+     * Gets forces from Torch
     */
-    virtual int update_forces() override;
+    virtual int get_forces() override;
+
+    /**
+      * Saves the data to GROMOS
+     */
+    virtual int write_data(topology::Topology & topo,
+				                   configuration::Configuration & conf,
+				                   const simulation::Simulation & sim) override;
 
     /**
      * Computes the number of charges like in QM_Worker.cc

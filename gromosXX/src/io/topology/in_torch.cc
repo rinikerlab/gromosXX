@@ -57,8 +57,9 @@ void io::In_Torch::read_models(simulation::Simulation & sim)
           "In_Torch", io::message::notice);
   unsigned atoms;
   std::string model_filename;
+  double unit_factor_length, unit_factor_energy, unit_factor_force, unit_factor_charge;
   while(!_lineStream.eof()) {
-    _lineStream >> atoms >> model_filename;
+    _lineStream >> atoms >> model_filename >> unit_factor_length >> unit_factor_energy >> unit_factor_force >> unit_factor_charge;
     if (_lineStream.fail()) {
       io::messages.add("Cannot read MODELS block", "In_Torch", io::message::error);
       return;
@@ -71,6 +72,6 @@ void io::In_Torch::read_models(simulation::Simulation & sim)
       case 2: atom_selection = simulation::torch_custom; break;
       default: io::messages.add("Invalid atom selection specified in Torch specification file: " + std::to_string(atoms), "In_Torch", io::message::error); return;
     }
-    sim.param().torch.models.emplace_back(atom_selection, model_filename);
+    sim.param().torch.models.emplace_back(atom_selection, model_filename, unit_factor_length, unit_factor_energy, unit_factor_force, unit_factor_charge);
   }
 }

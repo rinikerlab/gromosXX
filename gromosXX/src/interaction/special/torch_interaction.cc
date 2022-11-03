@@ -37,9 +37,12 @@ namespace interaction {
 		                           std::ostream & os,
 		                           bool quiet) {
     DEBUG(15, "Initializing Torch interaction");
+    m_timer.start(sim);
+    m_timer.start_subtimer("Loading model");
     int err = load_model();
     if (err) return err;
-
+    m_timer.stop_subtimer("Loading model");
+    m_timer.stop();
     return err;
   }
 
@@ -64,23 +67,41 @@ namespace interaction {
 				                                     configuration::Configuration & conf,
 				                                     simulation::Simulation & sim) {
     DEBUG(15, "Calculating Torch Interaction");
+    m_timer.start(sim);
+
+    m_timer.start_subtimer("Preparing input");
     int err = prepare_input(sim);
     if (err) return err;
+    m_timer.stop_subtimer("Preparing input");
 
+    m_timer.start_subtimer("Building tensor");
     err = build_tensors(sim);
     if (err) return err;
+    m_timer.stop_subtimer();
 
+    m_timer.start_subtimer("Forward pass");
     err = forward();
     if (err) return err;
+    m_timer.stop_subtimer("Forward pass");
 
+    m_timer.start_subtimer("Backward pass");
     err = backward();
     if (err) return err;
+    m_timer.stop_subtimer("Backward pass");
 
-    err = update_energy();
+    m_timer.start_subtimer("Parsing tensors");
+    err = get_energy();
     if (err) return err;
+    err = get_forces();
+    if (err) return err;
+    m_timer.stop_subtimer("Parsing tensors");
+    
+    m_timer.start_subtimer("Writing data");
+    err = write_data(topo, conf, sim);
+    if (err) return err;
+    m_timer.stop_subtimer("Writing data");
 
-    err = update_forces();
-    if (err) return err;
+    m_timer.stop();
 
     return err;
   }

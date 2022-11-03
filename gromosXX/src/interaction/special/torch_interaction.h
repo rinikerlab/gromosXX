@@ -27,7 +27,7 @@ namespace interaction {
      * Constructor - Initializes name and timer of the Interaction
      * 
      */
-    Torch_Interaction(const simulation::torch_model& model) : Interaction("Torch"), model(model) {}
+    Torch_Interaction(const simulation::torch_model& model, const std::string& name) : Interaction(name), model(model) {}
 
     /**
      * Destructor - Nothing to clean up
@@ -79,14 +79,21 @@ namespace interaction {
       virtual int backward() = 0;
 
       /**
-       * Passes the energy back from Torch to Gromos
+       * Gets energy from Torch
       */
-      virtual int update_energy() = 0;
+      virtual int get_energy() = 0;
 
       /**
-       * Passes the forces back from Torch to Gromos
+       * Gets forces from Torch
       */
-      virtual int update_forces() = 0;
+      virtual int get_forces() = 0;
+
+      /**
+       * Saves the data to GROMOS
+      */
+      virtual int write_data(topology::Topology & topo,
+				                     configuration::Configuration & conf,
+				                     const simulation::Simulation & sim) = 0;
 
       /**
        * Parameters on the model loaded
