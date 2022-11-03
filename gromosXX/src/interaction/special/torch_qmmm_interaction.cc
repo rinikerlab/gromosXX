@@ -230,12 +230,14 @@ namespace interaction {
     energy_tensor.backward();
     qm_gradient_tensor = qm_positions_tensor.grad();
     mm_gradient_tensor = mm_positions_tensor.grad();
+    DEBUG(15, "Sum of QM gradient tensor: " + std::to_string(torch::sum(qm_gradient_tensor).item<float>()));
+    DEBUG(15, "Sum of MM gradient tensor: " + std::to_string(torch::sum(mm_gradient_tensor).item<float>()));
     return err;
   }
 
   int Torch_QMMM_Interaction::update_energy() {
     double energy = static_cast<double>(energy_tensor.item<float>());
-    qm_zone_ptr->QM_energy() += energy;
+    qm_zone_ptr->QM_energy() += energy; // energy will be written in write function of qm_zone
     DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol to QM zone (" << qm_zone_ptr->QM_energy() << " kJ / mol total)");
     return 0; 
   }
@@ -249,7 +251,7 @@ namespace interaction {
       DEBUG(15, "Parsing gradients of QM atom " << it->index);
       for (size_t dim = 0; dim < 3; ++dim) {
         // forces = negative gradient (!)
-        it->force[dim] += -1.0 * static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>());
+        it->force[dim] = -1.0 * static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>());
       }
       DEBUG(15, "Force: " << math::v2s(it->force));
       ++qm_atom;
@@ -260,7 +262,7 @@ namespace interaction {
       DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-" << it->mm_index);
       for (size_t dim = 0; dim < 3; ++dim) {
         // forces = negative gradient (!)
-        it->force[dim] += -1.0 * static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>());
+        it->force[dim] = -1.0 * static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>());
       }
       DEBUG(15, "Force: " << math::v2s(it->force));
       ++qm_atom;
@@ -273,14 +275,14 @@ namespace interaction {
       DEBUG(15,"Parsing gradient of MM atom " << it->index);
       for (size_t dim = 0; dim < 3; ++dim) {
         // forces = negative gradient (!)
-        it->force[dim] += -1.0 * static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>());
+        it->force[dim] = -1.0 * static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>());
       }
       DEBUG(15, "Force: " << math::v2s(it->force));
       if (it->is_polarisable) {
         ++mm_atom; // COS gradients live directly past the corresponding MM gradients
         DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
         for (size_t dim = 0; dim < 3; ++dim) {
-          it->cos_force[dim] += -1.0 * static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>());
+          it->cos_force[dim] = -1.0 * static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>());
         }
         DEBUG(15, "Force " << math::v2s(it->cos_force));
       }
