@@ -827,9 +827,9 @@ namespace math
 
   /**
    * Copies a three-dimensional vector of doubles into a one-dimensional vector with the specified offset and scaling. 
-   * Useful to prepare data for Fortran API calls. No bounce checks.
+   * Useful to prepare data for Fortran / Torch API calls. No bounce checks. Can cast back from e.g. <float> using template argument
    * 
-   * @param v_f One-dimensional vector of doubles ready to go into the Fortran code
+   * @param v_f One-dimensional vector of doubles ready to go into the Fortran / Torch code
    * @param v_c Cartesian coordinates of an atom / gradient to be copied
    * @param offset The specified offset
    * @param scaling The scaling factor
@@ -846,9 +846,9 @@ namespace math
   }
   /**
    * Copies a one-dimensional vector of doubles into a three-dimensional vector with the specified offset and scaling. 
-   * Useful to process data received from Fortran API calls. No bounce checks.
+   * Useful to process data received from Fortran API calls / Torch. No bounce checks. Can cast back from e.g. <float> using template argument
    * 
-   * @param v_f One dimensional vector of doubles received from a Fortran API call
+   * @param v_f One dimensional vector of doubles received from a Fortran / Torch API call
    * @param v_c Cartesian coordinates of an atom / gradient to be copied to
    * @param offset The specified offset
    * @param scaling The scaling factor

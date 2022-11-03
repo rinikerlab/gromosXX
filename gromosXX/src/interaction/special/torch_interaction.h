@@ -94,7 +94,7 @@ protected:
                          const simulation::Simulation &sim) = 0;
 
   /**
-   * Parameters on the model loaded
+   * Parameters of the model loaded
    */
   simulation::torch_model model;
 

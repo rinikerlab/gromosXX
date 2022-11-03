@@ -14,6 +14,8 @@
 #include <torch/torch.h>
 #endif
 
+#include "../simulation/multibath.h"
+
 namespace simulation
 {
   /**
