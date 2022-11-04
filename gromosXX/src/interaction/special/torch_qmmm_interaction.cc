@@ -141,7 +141,7 @@ int Torch_QMMM_Interaction::prepare_qm_atoms() {
                                          to = qm_zone_ptr->qm.end();
        it != to; ++it) {
     DEBUG(15, it->index << " " << it->atomic_number << " "
-                        << math::v2s(it->pos) * len_to_torch);
+                        << math::v2s(it->pos * len_to_torch));
     math::vector_c2f<float>(qm_positions, it->pos, i, len_to_torch);
     ++i;
   }
@@ -152,7 +152,7 @@ int Torch_QMMM_Interaction::prepare_qm_atoms() {
        it != to; it++) {
     DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
                               << it->atomic_number << " "
-                              << math::v2s(it->pos) * len_to_torch);
+                              << math::v2s(it->pos * len_to_torch));
     math::vector_c2f<float>(qm_positions, it->pos, i, len_to_torch);
     ++i;
   }
@@ -185,7 +185,7 @@ int Torch_QMMM_Interaction::prepare_mm_atoms() {
       // MM atom minus COS
       DEBUG(15, it->index << " " << it->atomic_number << " "
                           << (it->charge - it->cos_charge) * cha_to_torch << " "
-                          << math::v2s(it->pos) * len_to_torch);
+                          << math::v2s(it->pos * len_to_torch));
       mm_atomic_numbers[i] = it->atomic_number;
       mm_charges[i] = (it->charge - it->cos_charge) * cha_to_torch;
       math::vector_c2f<float>(mm_positions, it->pos, i, len_to_torch);
@@ -201,7 +201,7 @@ int Torch_QMMM_Interaction::prepare_mm_atoms() {
     } else {
       DEBUG(15, it->index << " " << it->atomic_number << " "
                           << it->charge * cha_to_torch << " "
-                          << math::v2s(it->pos) * len_to_torch);
+                          << math::v2s(it->pos * len_to_torch));
       mm_atomic_numbers[i] = it->atomic_number;
       mm_charges[i] = it->charge * cha_to_torch;
       math::vector_c2f<float>(mm_positions, it->pos, i, len_to_torch);
@@ -215,18 +215,18 @@ int Torch_QMMM_Interaction::build_tensors(const simulation::Simulation &sim) {
   DEBUG(15, "Building tensors");
   int err = 0;
   qm_atomic_numbers_tensor = torch::from_blob(
-      qm_atomic_numbers.data(), {natoms}, sim.param().torch.options_int);
+      qm_atomic_numbers.data(), {natoms}, tensor_int32);
   qm_positions_tensor =
       torch::from_blob(qm_positions.data(), {natoms, 3},
-                       sim.param().torch.options_float_gradient);
+                       tensor_float_gradient);
   mm_atomic_numbers_tensor = torch::from_blob(
-      mm_atomic_numbers.data(), {ncharges}, sim.param().torch.options_int);
+      mm_atomic_numbers.data(), {ncharges}, tensor_int32);
   mm_charges_tensor =
       torch::from_blob(mm_charges.data(), {ncharges},
-                       sim.param().torch.options_float_no_gradient);
+                       tensor_float_no_gradient);
   mm_positions_tensor =
       torch::from_blob(mm_positions.data(), {ncharges, 3},
-                       sim.param().torch.options_float_gradient);
+                       tensor_float_gradient);
 
   return err;
 }
@@ -282,7 +282,7 @@ int Torch_QMMM_Interaction::get_forces() const {
           static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>()) *
           model.unit_factor_force;
     }
-    DEBUG(15, "Force: " << math::v2s(it->force) * model.unit_factor_force);
+    DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
     ++qm_atom;
   }
   // Parse capping atoms (index i keeps running...)
@@ -298,7 +298,7 @@ int Torch_QMMM_Interaction::get_forces() const {
           static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>()) *
           model.unit_factor_force;
     }
-    DEBUG(15, "Force: " << math::v2s(it->force) * model.unit_factor_force);
+    DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
     ++qm_atom;
   }
 
@@ -315,7 +315,7 @@ int Torch_QMMM_Interaction::get_forces() const {
           static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>()) *
           model.unit_factor_force;
     }
-    DEBUG(15, "Force: " << math::v2s(it->force));
+    DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
     if (it->is_polarisable) {
       ++mm_atom; // COS gradients live directly past the corresponding MM
                  // gradients
@@ -327,7 +327,7 @@ int Torch_QMMM_Interaction::get_forces() const {
                 mm_gradient_tensor[mm_atom][dim].item<float>()) *
             model.unit_factor_force;
       }
-      DEBUG(15, "Force " << math::v2s(it->cos_force) * model.unit_factor_force);
+      DEBUG(15, "Force " << math::v2s(it->cos_force * model.unit_factor_force));
     }
     ++mm_atom;
   }

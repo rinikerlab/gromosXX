@@ -140,24 +140,6 @@ namespace simulation
     torch_on = 1,
   };
   /**
-   * @enum torch_device_enum
-   * which device to run PyTorch on
-   */
-  enum torch_device_enum {
-    /**
-     * autodetect architecture
-     */
-    torch_autodetect = 0,
-    /**
-     * run on CPU
-     */
-    torch_cpu = 1,
-    /**
-     * run on GPU
-     */
-    torch_gpu = 2
-  };
-  /**
    * @enum torch_atom_enum
    * which atoms will be sent to PyTorch
    */
@@ -176,36 +158,31 @@ namespace simulation
     torch_custom = 2
   };
   /**
-   * @enum torch_precision_enum
-   * precision of the Torch model
-   */
-  enum torch_precision_enum {
-    /**
-     * 16-bit precision
-     */
-    torch_float16 = 0,
-    /**
-     * 32-bit precision
-     */
-    torch_float32 = 1,
-    /**
-     * 64-bit precision
-     */
-    torch_float64 = 2
-  };
-  /**
    * @struct torch_model
    * stores information on a Torch model
    */
   struct torch_model {
 
     /**
+     * Default constructor: all atoms, float32 on CPU, all unit conversions 1.0
+    */
+    torch_model() : 
+    atom_selection(torch_all),
+    filename(""),
+    precision(torch::kFloat32),
+    device(torch::kCPU),
+    unit_factor_length(1.0), 
+    unit_factor_energy(1.0), 
+    unit_factor_force(1.0), 
+    unit_factor_charge(1.0) {}
+    /**
      * Pass which atoms to send and which model to load
     */
-    torch_model(torch_atom_enum atoms, const std::string& filename, torch_precision_enum precision, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
-      atoms(atoms), 
+    torch_model(torch_atom_enum atoms, const std::string& filename, torch::Dtype precision, const torch::Device& device, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
+      atom_selection(atoms), 
       filename(filename), 
       precision(precision),
+      device(torch::kCPU),
       unit_factor_length(unit_factor_length), 
       unit_factor_energy(unit_factor_energy), 
       unit_factor_force(unit_factor_force), 
@@ -213,7 +190,7 @@ namespace simulation
     /**
      * which atoms go to the model
      */
-    torch_atom_enum atoms;
+    torch_atom_enum atom_selection;
     /**
      * the name of the PyTorch model
      */
@@ -221,7 +198,11 @@ namespace simulation
     /**
      * numerical precision pf the Torch model
     */
-    torch_precision_enum precision;
+    torch::Dtype precision;
+    /**
+     * device all models will run on
+     */
+    torch::Device device;
      /**
      * factor to convert the Torch length unit to the GROMOS one
      */
@@ -4466,32 +4447,15 @@ namespace simulation
 #ifdef WITH_TORCH
     struct torch_struct {
 
-      torch_struct() : torch (torch_off), 
-                       device (torch::kCPU) {}
+      torch_struct() : torch (torch_off) {}
       /**
        * torch enum 
        */
       torch_enum torch;
       /**
-       * device all models will run on
-       */
-      torch::Device device;
-      /**
        * all models loaded
        */
       std::vector<torch_model> models;
-      /**
-       * options for floating point tensors that require autograd
-      */
-      torch::TensorOptions options_float_gradient;
-      /**
-       * options for floating point tensors that do not require autograd
-      */
-      torch::TensorOptions options_float_no_gradient;
-      /**
-       * options for integer tensors
-      */
-      torch::TensorOptions options_int;
     } torch;
 #endif    
     /**

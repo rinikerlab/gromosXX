@@ -28,7 +28,23 @@ public:
    */
   Torch_Interaction(const simulation::torch_model &model,
                     const std::string &name)
-      : Interaction(name), model(model) {}
+      : Interaction(name), model(model) {
+    // initializing where tensors will live and how they look like
+    tensor_int32 = torch::TensorOptions() 
+                  .dtype(torch::kInt32)
+                  .device(model.device)
+                  .layout(torch::kStrided); 
+    tensor_float_gradient = torch::TensorOptions() 
+                  .dtype(model.precision)
+                  .device(model.device)
+                  .layout(torch::kStrided)
+                  .requires_grad(true);  
+    tensor_float_no_gradient = torch::TensorOptions() 
+                  .dtype(model.precision)
+                  .device(model.device)
+                  .layout(torch::kStrided)
+                  .requires_grad(false);
+  }
 
   /**
    * Destructor - Nothing to clean up
@@ -94,6 +110,16 @@ protected:
                          const simulation::Simulation &sim) const = 0;
 
   /**
+   * Print units conversion factors
+   */
+  virtual void print_unit_factors(std::ostream & os) const {
+    os << model.unit_factor_length << ", "
+       << model.unit_factor_energy << ", "
+       << model.unit_factor_force << ", "
+       << model.unit_factor_charge;
+  };
+  
+  /**
    * Parameters of the model loaded
    */
   simulation::torch_model model;
@@ -102,6 +128,21 @@ protected:
    * A representation of the model
    */
   torch::jit::script::Module module;
+
+  /**
+   * Stores options how integer tensor are stored (e.g. for atomic indices)
+  */
+  torch::TensorOptions tensor_int32;
+
+  /**
+   * Stores options how floating point tensor are stored that require gradients (e.g. for atomic positions)
+  */
+  torch::TensorOptions tensor_float_gradient;
+
+  /**
+   * Stores options how floating point tensor are stored that require no gradients (e.g. for atomic charges)
+  */
+  torch::TensorOptions tensor_float_no_gradient;
 };
 
 } // namespace interaction

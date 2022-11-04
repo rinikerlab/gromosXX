@@ -41,6 +41,17 @@ int Torch_Interaction::init(topology::Topology &topo,
   int err = load_model();
   if (err)
     return err;
+
+  if(!quiet) {
+    os << "TORCH\n";
+    os << "\tModel name: " << model.filename << '\n';
+    os << "\tunits conversion factors: ";
+    print_unit_factors(os);
+    os << std::endl;
+    os << "\tDevice: " << model.device << '\n';
+    os << "\tPrecision: " << model.precision << "\n\n";
+  }
+
   m_timer.stop_subtimer("Loading model");
   m_timer.stop();
   return err;
@@ -51,7 +62,7 @@ int Torch_Interaction::load_model() {
   int err = 0;
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
-    module = torch::jit::load(model.filename);
+    module = torch::jit::load(model.filename, model.device);
   } catch (const c10::Error &e) {
     io::messages.add("Unable to load / deserialize Torch model: " +
                          model.filename,
