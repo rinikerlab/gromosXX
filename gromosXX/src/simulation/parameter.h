@@ -125,6 +125,7 @@ namespace simulation
      */
     dfunct_cycloaddition
   };
+#ifdef WITH_TORCH
   /**
    * @enum torch_enum
    * do TORCH, or not
@@ -220,6 +221,7 @@ namespace simulation
      */
     double unit_factor_charge;
     };
+#endif
   /**
    * @enum special_loop_enum
    * special solvent loop
