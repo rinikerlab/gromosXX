@@ -77,10 +77,10 @@ int interaction::create_special(interaction::Forcefield & ff,
     // iterate over all models and create special interactions for each
     for (const auto& model : param.torch.models) {
       switch (model.atom_selection) {
-        case simulation::torch_all: io::messages.add("All atom specifier not yet implemented for Torch interaction", io::message::error); return 1; break;
+        case simulation::torch_all: io::messages.add("All atom specifier not yet implemented for Torch interaction", io::message::error); return 1;
         case simulation::torch_qmmm: ff.push_back(new interaction::Torch_QMMM_Interaction(model)); break;
-        case simulation::torch_custom: io::messages.add("Custom atom specifier not yet implemented for Torch interaction", io::message::error); return 1; break;
-        default: io::messages.add("Unknown atom specifier for Torch interaction", io::message::error); return 1; break;
+        case simulation::torch_custom: io::messages.add("Custom atom specifier not yet implemented for Torch interaction", io::message::error); return 1;
+        default: io::messages.add("Unknown atom specifier for Torch interaction", io::message::error); return 1;
       }
     }
   }

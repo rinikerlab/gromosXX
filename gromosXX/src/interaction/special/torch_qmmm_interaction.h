@@ -133,6 +133,16 @@ private:
   int ncharges;
 
   /**
+   * How many batches are sent to Torch each iteration
+  */
+  unsigned batch_size;
+
+  /**
+   * How many Cartesian coordinates
+  */
+  unsigned dimensions;
+
+  /**
    * Atomic numbers of the QM zone as C style array
    */
   std::vector<unsigned> qm_atomic_numbers;

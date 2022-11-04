@@ -50,6 +50,10 @@ int Torch_QMMM_Interaction::init(topology::Topology &topo,
   if (err)
     return err;
 
+  // one batch per iteration
+  batch_size = 1;
+  dimensions = 3;
+
   err = init_qm_zone();
   if (err)
     return err;
@@ -106,7 +110,7 @@ int Torch_QMMM_Interaction::prepare_input(const simulation::Simulation &sim) {
 int Torch_QMMM_Interaction::init_qm_atom_numbers() {
   int err = 0;
   qm_atomic_numbers.resize(natoms);
-  qm_positions.resize(3 * natoms);
+  qm_positions.resize(dimensions * natoms);
 
   unsigned int i = 0;
   DEBUG(15, "Initializing QM atom types");
@@ -168,7 +172,7 @@ int Torch_QMMM_Interaction::prepare_mm_atoms() {
 
   mm_atomic_numbers.resize(ncharges);
   mm_charges.resize(ncharges);
-  mm_positions.resize(ncharges * 3);
+  mm_positions.resize(ncharges * dimensions);
 
   DEBUG(15, "Transfering point charges to Torch");
 
@@ -214,18 +218,19 @@ int Torch_QMMM_Interaction::prepare_mm_atoms() {
 int Torch_QMMM_Interaction::build_tensors(const simulation::Simulation &sim) {
   DEBUG(15, "Building tensors");
   int err = 0;
+  // batch size is 1
   qm_atomic_numbers_tensor = torch::from_blob(
-      qm_atomic_numbers.data(), {natoms}, tensor_int32);
+      qm_atomic_numbers.data(), {batch_size, natoms}, tensor_int32);
   qm_positions_tensor =
-      torch::from_blob(qm_positions.data(), {natoms, 3},
+      torch::from_blob(qm_positions.data(), {batch_size, natoms, dimensions},
                        tensor_float_gradient);
   mm_atomic_numbers_tensor = torch::from_blob(
-      mm_atomic_numbers.data(), {ncharges}, tensor_int32);
+      mm_atomic_numbers.data(), {batch_size, ncharges}, tensor_int32);
   mm_charges_tensor =
-      torch::from_blob(mm_charges.data(), {ncharges},
+      torch::from_blob(mm_charges.data(), {batch_size, ncharges},
                        tensor_float_no_gradient);
   mm_positions_tensor =
-      torch::from_blob(mm_positions.data(), {ncharges, 3},
+      torch::from_blob(mm_positions.data(), {batch_size, ncharges, dimensions},
                        tensor_float_gradient);
 
   return err;
@@ -275,11 +280,11 @@ int Torch_QMMM_Interaction::get_forces() const {
                                    to = qm_zone_ptr->qm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradients of QM atom " << it->index);
-    for (size_t dim = 0; dim < 3; ++dim) {
+    for (size_t dim = 0; dim < dimensions; ++dim) {
       // forces = negative gradient (!)
       it->force[dim] =
           -1.0 *
-          static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>()) *
+          static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][dim].item<float>()) *  // 0 idx for batch_size
           model.unit_factor_force;
     }
     DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
@@ -291,11 +296,11 @@ int Torch_QMMM_Interaction::get_forces() const {
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-"
                                                   << it->mm_index);
-    for (size_t dim = 0; dim < 3; ++dim) {
+    for (size_t dim = 0; dim < dimensions; ++dim) {
       // forces = negative gradient (!)
       it->force[dim] =
           -1.0 *
-          static_cast<double>(qm_gradient_tensor[qm_atom][dim].item<float>()) *
+          static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][dim].item<float>()) *  // 0 idx for batch_size
           model.unit_factor_force;
     }
     DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
@@ -308,11 +313,11 @@ int Torch_QMMM_Interaction::get_forces() const {
                                    to = qm_zone_ptr->mm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of MM atom " << it->index);
-    for (size_t dim = 0; dim < 3; ++dim) {
+    for (size_t dim = 0; dim < dimensions; ++dim) {
       // forces = negative gradient (!)
       it->force[dim] =
           -1.0 *
-          static_cast<double>(mm_gradient_tensor[mm_atom][dim].item<float>()) *
+          static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][dim].item<float>()) *  // 0 idx for batch_size
           model.unit_factor_force;
     }
     DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
@@ -320,11 +325,11 @@ int Torch_QMMM_Interaction::get_forces() const {
       ++mm_atom; // COS gradients live directly past the corresponding MM
                  // gradients
       DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
-      for (size_t dim = 0; dim < 3; ++dim) {
+      for (size_t dim = 0; dim < dimensions; ++dim) {
         it->cos_force[dim] =
             -1.0 *
             static_cast<double>(
-                mm_gradient_tensor[mm_atom][dim].item<float>()) *
+                mm_gradient_tensor[batch_size - 1][mm_atom][dim].item<float>()) * // 0 idx for batch_size
             model.unit_factor_force;
       }
       DEBUG(15, "Force " << math::v2s(it->cos_force * model.unit_factor_force));
