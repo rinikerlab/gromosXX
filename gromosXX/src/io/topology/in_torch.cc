@@ -54,22 +54,18 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
   // block exists
   io::messages.add("Reading MODELS block in Torch specification file.",
                    "In_Torch", io::message::notice);
+  simulation::torch_model model;
   unsigned atoms;
-  std::string model_filename;
   int precision, device;
-  double unit_factor_length, unit_factor_energy, unit_factor_force,
-      unit_factor_charge;
   while (!_lineStream.eof()) {
-    _lineStream >> atoms >> model_filename >> precision >> device >> unit_factor_length >>
-        unit_factor_energy >> unit_factor_force >> unit_factor_charge;
+    _lineStream >> atoms >> model.filename >> precision >> device >> model.unit_factor_length >>
+        model.unit_factor_energy >> model.unit_factor_force >> model.unit_factor_charge;
     if (_lineStream.fail()) {
       io::messages.add("Cannot read MODELS block", "In_Torch",
                        io::message::error);
       return;
     }
   }
-
-  simulation::torch_model model;
 
   // set enum for atom selection
   switch (atoms) {
@@ -89,9 +85,6 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
         "In_Torch", io::message::error);
     return;
   }
-
-  // model name
-  model.filename = model_filename;
 
   // set enum for model precision
   switch (precision) {
@@ -121,12 +114,6 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
         "In_Torch", io::message::error);
     return;
   }
-
-  // conversion factors
-  model.unit_factor_length = unit_factor_length;
-  model.unit_factor_length = unit_factor_energy;
-  model.unit_factor_length = unit_factor_force;
-  model.unit_factor_length = unit_factor_charge;
 
   sim.param().torch.models.push_back(model);
 }

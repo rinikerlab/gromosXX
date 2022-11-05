@@ -220,7 +220,7 @@ int Torch_QMMM_Interaction::build_tensors(const simulation::Simulation &sim) {
   int err = 0;
   // batch size is 1
   qm_atomic_numbers_tensor = torch::from_blob(
-      qm_atomic_numbers.data(), {batch_size, natoms}, tensor_int32);
+      qm_atomic_numbers.data(), {batch_size, natoms}, tensor_int64);
   qm_positions_tensor =
       torch::from_blob(qm_positions.data(), {batch_size, natoms, dimensions},
                        tensor_float_gradient);

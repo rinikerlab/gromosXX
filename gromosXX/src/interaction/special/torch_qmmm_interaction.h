@@ -145,7 +145,7 @@ private:
   /**
    * Atomic numbers of the QM zone as C style array
    */
-  std::vector<unsigned> qm_atomic_numbers;
+  std::vector<int64_t> qm_atomic_numbers;
 
   /**
    * Atomic positions of the QM zone as C style array

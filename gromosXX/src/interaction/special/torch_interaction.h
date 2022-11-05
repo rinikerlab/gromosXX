@@ -34,6 +34,10 @@ public:
                   .dtype(torch::kInt32)
                   .device(model.device)
                   .layout(torch::kStrided); 
+    tensor_int64 = torch::TensorOptions() 
+                  .dtype(torch::kInt64)
+                  .device(model.device)
+                  .layout(torch::kStrided); 
     tensor_float_gradient = torch::TensorOptions() 
                   .dtype(model.precision)
                   .device(model.device)
@@ -130,9 +134,14 @@ protected:
   torch::jit::script::Module module;
 
   /**
-   * Stores options how integer tensor are stored (e.g. for atomic indices)
+   * Stores options how integer tensor are stored (e.g. for atomic indices) -> int32
   */
   torch::TensorOptions tensor_int32;
+
+  /**
+   * Stores options how integer tensor are stored (e.g. for atomic indices) -> int64
+  */
+  torch::TensorOptions tensor_int64;
 
   /**
    * Stores options how floating point tensor are stored that require gradients (e.g. for atomic positions)
