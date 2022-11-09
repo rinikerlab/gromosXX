@@ -9,6 +9,8 @@
 #include <vector>
 
 #include <torch/torch.h>
+#include <torchscatter/scatter.h>
+#include <torchsparse/sparse.h>
 
 #include "../../stdheader.h"
 #include "../../interaction/interaction.h"
