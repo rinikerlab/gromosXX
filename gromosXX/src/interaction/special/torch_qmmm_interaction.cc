@@ -266,9 +266,7 @@ int Torch_QMMM_Interaction::get_energy() const {
                   model.unit_factor_energy;
   qm_zone_ptr->QM_energy() +=
       energy; // energy will be written in write function of qm_zone
-  DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol to QM zone ("
-                                     << qm_zone_ptr->QM_energy()
-                                     << " kJ / mol total)");
+  DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol");
   return 0;
 }
 
@@ -287,7 +285,7 @@ int Torch_QMMM_Interaction::get_forces() const {
           static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][dim].item<float>()) *  // 0 idx for batch_size
           model.unit_factor_force;
     }
-    DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
+    DEBUG(15, "Force: " << math::v2s(it->force));
     ++qm_atom;
   }
   // Parse capping atoms (index i keeps running...)
@@ -303,7 +301,7 @@ int Torch_QMMM_Interaction::get_forces() const {
           static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][dim].item<float>()) *  // 0 idx for batch_size
           model.unit_factor_force;
     }
-    DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
+    DEBUG(15, "Force: " << math::v2s(it->force));
     ++qm_atom;
   }
 
@@ -320,7 +318,7 @@ int Torch_QMMM_Interaction::get_forces() const {
           static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][dim].item<float>()) *  // 0 idx for batch_size
           model.unit_factor_force;
     }
-    DEBUG(15, "Force: " << math::v2s(it->force * model.unit_factor_force));
+    DEBUG(15, "Force: " << math::v2s(it->force));
     if (it->is_polarisable) {
       ++mm_atom; // COS gradients live directly past the corresponding MM
                  // gradients
@@ -332,7 +330,7 @@ int Torch_QMMM_Interaction::get_forces() const {
                 mm_gradient_tensor[batch_size - 1][mm_atom][dim].item<float>()) * // 0 idx for batch_size
             model.unit_factor_force;
       }
-      DEBUG(15, "Force " << math::v2s(it->cos_force * model.unit_factor_force));
+      DEBUG(15, "Force " << math::v2s(it->cos_force));
     }
     ++mm_atom;
   }
