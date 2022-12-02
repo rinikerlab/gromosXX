@@ -92,21 +92,18 @@ private:
   virtual int backward() override;
 
   /**
-   * Gets energy from Torch
+   * Gets energy from Torch and updates Gromos
    */
-  virtual int get_energy() const override;
+  virtual int update_energy(topology::Topology &topo,
+                            configuration::Configuration &conf,
+                            const simulation::Simulation &sim) override;
 
   /**
-   * Gets forces from Torch
+   * Gets forces from Torch and updates Gromos
    */
-  virtual int get_forces() const override;
-
-  /**
-   * Saves the data to GROMOS
-   */
-  virtual int write_data(topology::Topology &topo,
-                         configuration::Configuration &conf,
-                         const simulation::Simulation &sim) const override;
+  virtual int update_forces(topology::Topology &topo,
+                            configuration::Configuration &conf,
+                            const simulation::Simulation &sim) override;
 
   /**
    * Computes the number of charges like in QM_Worker.cc

@@ -187,6 +187,10 @@ namespace configuration
      * energy difference of validation NN model
      */
     double nn_valid;
+    /**
+     * total energy of Torch interactions
+     */
+    double torch_total;
 
     /** ANITA
     * total A_lj for each lambda
@@ -402,6 +406,10 @@ namespace configuration
      * volume (sasa) interaction energy term
      */
     std::vector<double> sasa_volume_energy;
+    /**
+     * energies for all models loaded sepate
+     */
+    std::vector<double> torch_energy;
 
     /** ANITA
      * A_lj energies for [lam][groupi][groupj]    

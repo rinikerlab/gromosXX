@@ -100,21 +100,18 @@ protected:
   virtual int backward() = 0;
 
   /**
-   * Gets energy from Torch
+   * Gets energy from Torch and updates Gromos
    */
-  virtual int get_energy() const = 0;
+  virtual int update_energy(topology::Topology &topo,
+                            configuration::Configuration &conf,
+                            const simulation::Simulation &sim) = 0;
 
   /**
-   * Gets forces from Torch
+   * Gets forces from Torch and updates Gromos
    */
-  virtual int get_forces() const = 0;
-
-  /**
-   * Saves the data to GROMOS
-   */
-  virtual int write_data(topology::Topology &topo,
-                         configuration::Configuration &conf,
-                         const simulation::Simulation &sim) const = 0;
+  virtual int update_forces(topology::Topology &topo,
+                            configuration::Configuration &conf,
+                            const simulation::Simulation &sim) = 0;
 
   /**
    * Print units conversion factors

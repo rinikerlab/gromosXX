@@ -18,8 +18,6 @@
 #include "../../io/configuration/in_configuration.h"
 #include "../../io/configuration/out_configuration.h"
 
-#include <vector>
-
 #include "in_torch.h"
 
 #include "../../util/debug.h"

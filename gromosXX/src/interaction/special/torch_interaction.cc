@@ -110,19 +110,13 @@ int Torch_Interaction<T>::calculate_interactions(
   m_timer.stop_subtimer("Backward pass");
 
   m_timer.start_subtimer("Parsing tensors");
-  err = get_energy();
+  err = update_energy(topo, conf, sim);
   if (err)
     return err;
-  err = get_forces();
+  err = update_forces(topo, conf, sim);
   if (err)
     return err;
   m_timer.stop_subtimer("Parsing tensors");
-
-  m_timer.start_subtimer("Writing data");
-  err = write_data(topo, conf, sim);
-  if (err)
-    return err;
-  m_timer.stop_subtimer("Writing data");
 
   m_timer.stop();
 

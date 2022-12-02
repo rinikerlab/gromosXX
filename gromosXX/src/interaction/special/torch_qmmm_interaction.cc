@@ -55,6 +55,9 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
   batch_size = 1;
   dimensions = 3;
 
+  // TODO: copy QM zone instead of using pointers, would make virial calculation easier
+  // TODO: is PBC taken care of
+
   err = init_qm_zone();
   if (err)
     return err;
@@ -271,93 +274,129 @@ int Torch_QMMM_Interaction<T>::backward() {
 }
 
 template <typename T>
-int Torch_QMMM_Interaction<T>::get_energy() const {
+int Torch_QMMM_Interaction<T>::update_energy(topology::Topology &topo,
+                                             configuration::Configuration &conf,
+                                             const simulation::Simulation &sim) {
   double energy = static_cast<double>(energy_tensor.item<T>()) *
                   this->model.unit_factor_energy;
-  qm_zone_ptr->QM_energy() +=
-      energy; // energy will be written in write function of qm_zone
   DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol");
+  conf.current().energies.torch_total = energy;
+  // TODO: split energies depending on which model it is and print
   return 0;
 }
 
 template <typename T>
-int Torch_QMMM_Interaction<T>::get_forces() const {
+int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
+                                             configuration::Configuration &conf,
+                                             const simulation::Simulation &sim) {
   // QM atoms and QM links
   unsigned qm_atom = 0;
-  // Parse QM atoms
+
+  // calculate virial
+  math::Matrix virial_tensor(0.0);
+
+  // Parse forces on QM atoms 
   for (std::set<QM_Atom>::iterator it = qm_zone_ptr->qm.begin(),
                                    to = qm_zone_ptr->qm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradients of QM atom " << it->index);
-    for (size_t dim = 0; dim < dimensions; ++dim) {
-      // forces = negative gradient (!)
-      it->force[dim] =
-          -1.0 *
-          static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][dim].item<T>()) *  // 0 idx for batch_size
+    math::Vec force;
+    // forces = negative gradient (!)
+    force[0] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
+    force[1] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
+          this->model.unit_factor_force;
+    force[2] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
+          this->model.unit_factor_force;     
+    DEBUG(15, "Force: " << math::v2s(force));
+    conf.current().force(it->index) += force;
+    // calculate virial
+    math::Vec& pos = conf.current().pos(it->index);
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        virial_tensor(j,i) += pos(j) * force(i);
+      }
     }
-    DEBUG(15, "Force: " << math::v2s(it->force));
     ++qm_atom;
   }
-  // Parse capping atoms (index i keeps running...)
+
+  // Parse forces on capping atoms (index i keeps running...) 
+  // TODO: does not work currently (!)
   for (std::set<QM_Link>::iterator it = qm_zone_ptr->link.begin(),
                                    to = qm_zone_ptr->link.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-"
                                                   << it->mm_index);
-    for (size_t dim = 0; dim < dimensions; ++dim) {
-      // forces = negative gradient (!)
-      it->force[dim] =
-          -1.0 *
-          static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][dim].item<T>()) *  // 0 idx for batch_size
+    math::Vec force;
+    force[0] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
-    }
-    DEBUG(15, "Force: " << math::v2s(it->force));
+    force[1] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
+          this->model.unit_factor_force;
+    force[2] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
+          this->model.unit_factor_force;
+    DEBUG(15, "Redistributing force of capping atom");
+    DEBUG(15, "QM-MM link: " << it->qm_index << " - " << it->mm_index);
+    std::set<QM_Atom>::iterator qm_it = this->qm_zone_ptr->qm.find(it->qm_index);
+    std::set<MM_Atom>::iterator mm_it = this->qm_zone_ptr->mm.find(it->mm_index);
+    assert(qm_it != this->qm_zone_ptr->qm.end());
+    assert(mm_it != this->qm_zone_ptr->mm.end());
+    it->distribute_force(qm_it->pos, mm_it->pos, qm_it->force, mm_it->force);
     ++qm_atom;
   }
 
-  // Parse MM atoms
+  // Parse forces on MM atoms
   unsigned int mm_atom = 0;
   for (std::set<MM_Atom>::iterator it = qm_zone_ptr->mm.begin(),
                                    to = qm_zone_ptr->mm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of MM atom " << it->index);
-    for (size_t dim = 0; dim < dimensions; ++dim) {
-      // forces = negative gradient (!)
-      it->force[dim] =
-          -1.0 *
-          static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][dim].item<T>()) *  // 0 idx for batch_size
+    math::Vec force;
+    // forces = negative gradient (!)
+    force[0] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
+    force[1] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
+          this->model.unit_factor_force;
+    force[2] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
+          this->model.unit_factor_force;
+    DEBUG(15, "Force: " << math::v2s(force));
+    conf.current().force(it->index) += force;
+    // calculate virial
+    math::Vec& pos = conf.current().pos(it->index);
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        virial_tensor(j,i) += pos(j) * force(i);
+      }
     }
-    DEBUG(15, "Force: " << math::v2s(it->force));
     if (it->is_polarisable) {
       ++mm_atom; // COS gradients live directly past the corresponding MM
                  // gradients
       DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
-      for (size_t dim = 0; dim < dimensions; ++dim) {
-        it->cos_force[dim] =
-            -1.0 *
-            static_cast<double>(
-                mm_gradient_tensor[batch_size - 1][mm_atom][dim].item<T>()) * // 0 idx for batch_size
+      math::Vec cos_force;
+      cos_force[0] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) * // 0 idx for batch_size
             this->model.unit_factor_force;
+      cos_force[1] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
+            this->model.unit_factor_force;
+      cos_force[2] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
+            this->model.unit_factor_force;
+      DEBUG(15, "Force " << math::v2s(cos_force));
+      conf.current().force(it->index) += force;
+      // calculate virial
+      math::Vec& pos = conf.current().pos(it->index);
+      for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+          virial_tensor(j,i) += pos(j) * force(i);
+        }
       }
-      DEBUG(15, "Force " << math::v2s(it->cos_force));
     }
     ++mm_atom;
   }
+  
+  // add virial contribution
+  if (sim.param().pcouple.virial) {
+    conf.current().virial_tensor += virial_tensor;
+  }
 
   return 0;
-}
-
-template <typename T>
-int Torch_QMMM_Interaction<T>::write_data(topology::Topology &topo,
-                                       configuration::Configuration &conf,
-                                       const simulation::Simulation &sim) const {
-  int err = 0;
-  // write out new QM zone (energies, forces, compute virial along the way)
-  DEBUG(15, "Writing the QM zone from Torch QM/MM Interaction");
-  qm_zone_ptr->write(topo, conf, sim);
-  return err;
 }
 
 template <typename T>

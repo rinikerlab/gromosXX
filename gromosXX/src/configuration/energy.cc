@@ -59,6 +59,7 @@ self_total(0.0),
 sasa_total(0.0),
 sasa_volume_total(0.0),
 nn_valid(0.0),
+torch_total(0.0),
 eds_vr(0.0),
 eds_vmix(0.0),
 eds_emax(0.0),
@@ -112,6 +113,7 @@ void configuration::Energy::zero(bool potential, bool kinetic)
     sasa_total = 0.0;
     sasa_volume_total = 0.0;
     nn_valid = 0.0;
+    torch_total = 0.0;
     qm_total = 0.0;
     eds_vr = 0.0;
     eds_vmix = 0.0;
@@ -587,6 +589,7 @@ double configuration::Energy::get_energy_by_index(const unsigned int & index) {
     case 43 : return rdc_total;
     case 44 : return angrest_total;
     case 45 : return nn_valid;
+    case 46 : return torch_total;
   }
   return 0.0;
 }
