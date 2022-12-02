@@ -86,6 +86,14 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
     return;
   }
 
+  // check what is supported
+  if (model.atom_selection == simulation::torch_qmmm && sim.param().qmmm.qmmm != simulation::qmmm_electrostatic) {
+    io::messages.add(
+        "Can only combine Torch QM/MM Interface with electrostatic embedding scheme.",
+        "In_Torch", io::message::error);
+    return;
+  }
+
   // set enum for model precision
   switch (precision) {
     case 0: model.precision = torch::kFloat16;
