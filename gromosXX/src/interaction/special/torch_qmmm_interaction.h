@@ -25,16 +25,17 @@ namespace interaction {
 
 /**
  * A specialized version of Torch_Interaction that sends the QM/MM zone to a
- * Torch model
+ * Torch model, typename T indicates numerical precision (half, single, double)
  */
-class Torch_QMMM_Interaction : public Torch_Interaction {
+template <typename T>
+class Torch_QMMM_Interaction : public Torch_Interaction<T> {
 
 public:
   /**
    * Initializes the interaction
    */
   Torch_QMMM_Interaction(const simulation::torch_model &model)
-      : Torch_Interaction(model, "Torch QM/MM Interface") {}
+      : Torch_Interaction<T>(model, "Torch QM/MM Interface") {}
 
   /**
    * Deallocates resources
@@ -65,13 +66,13 @@ private:
   virtual int init_qm_atom_numbers();
 
   /**
-   * Sets-up the vector with QM coordinates - will also cast double to float
+   * Sets-up the vector with QM coordinates - will also cast floating point precisions
    */
   virtual int prepare_qm_atoms();
 
   /**
    * Sets-up the vectors with MM atom types, charges, and coordinates - will
-   * also cast double to float
+   * also cast floating point precision
    */
   virtual int prepare_mm_atoms();
 
@@ -150,7 +151,7 @@ private:
   /**
    * Atomic positions of the QM zone as C style array
    */
-  std::vector<float> qm_positions;
+  std::vector<T> qm_positions;
 
   /**
    * Atomic numbers of the MM zone as C style array
@@ -160,12 +161,12 @@ private:
   /**
    * Charges of the MM zone as C style array
    */
-  std::vector<float> mm_charges;
+  std::vector<T> mm_charges;
 
   /**
    * Atomic positions of the MM zone as C style array
    */
-  std::vector<float> mm_positions;
+  std::vector<T> mm_positions;
 
   /**
    * A (non-owning) tensor to hold QM atomic numbers

@@ -81,7 +81,8 @@ int interaction::create_special(interaction::Forcefield & ff,
              io::message::error); 
              return 1;
              break;
-        case simulation::torch_qmmm: ff.push_back(new interaction::Torch_QMMM_Interaction(model)); 
+        case simulation::torch_qmmm: 
+             interaction::add_torch_model<interaction::Torch_QMMM_Interaction>(model, ff);
              break;
         case simulation::torch_custom: io::messages.add("Custom atom specifier not yet implemented for Torch interaction", 
              io::message::error); 

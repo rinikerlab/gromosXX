@@ -31,7 +31,8 @@
 
 namespace interaction {
 
-int Torch_Interaction::init(topology::Topology &topo,
+template <typename T>
+int Torch_Interaction<T>::init(topology::Topology &topo,
                             configuration::Configuration &conf,
                             simulation::Simulation &sim, std::ostream &os,
                             bool quiet) {
@@ -57,7 +58,8 @@ int Torch_Interaction::init(topology::Topology &topo,
   return err;
 }
 
-int Torch_Interaction::load_model() {
+template <typename T>
+int Torch_Interaction<T>::load_model() {
   DEBUG(15, "Loading Torch model");
   int err = 0;
   try {
@@ -76,7 +78,8 @@ int Torch_Interaction::load_model() {
   return err;
 }
 
-int Torch_Interaction::calculate_interactions(
+template <typename T>
+int Torch_Interaction<T>::calculate_interactions(
     topology::Topology &topo, configuration::Configuration &conf,
     simulation::Simulation &sim) {
   DEBUG(15, "Calculating Torch Interaction");
@@ -125,5 +128,12 @@ int Torch_Interaction::calculate_interactions(
 
   return err;
 }
+
+// explicit instantiations: 
+// https://isocpp.org/wiki/faq/templates#templates-defn-vs-decl 
+// https://stackoverflow.com/questions/495021/why-can-templates-only-be-implemented-in-the-header-file
+template class Torch_Interaction<torch::Half>;
+template class Torch_Interaction<float>;
+template class Torch_Interaction<double>;
 
 } // namespace interaction

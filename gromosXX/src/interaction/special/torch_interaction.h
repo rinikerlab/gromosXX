@@ -19,8 +19,9 @@
 namespace interaction {
 
 /*
- * Provides an interface to PyTorch
+ * Provides an interface to PyTorch, typename T indicates numerical precision (half, single, double)
  */
+template <typename T>
 class Torch_Interaction : public Interaction {
 
 public:
