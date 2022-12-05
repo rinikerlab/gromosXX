@@ -55,7 +55,6 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
   batch_size = 1;
   dimensions = 3;
 
-  // TODO: copy QM zone instead of using pointers, would make virial calculation easier
   // TODO: is PBC taken care of
   // TODO: get_num_of charges from QM_Worker
 
