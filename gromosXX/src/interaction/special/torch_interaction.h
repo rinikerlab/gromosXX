@@ -33,10 +33,6 @@ public:
                     const std::string &name)
       : Interaction(name), model(model) {
     // initializing where tensors will live and how they look like
-    tensor_int32 = torch::TensorOptions() 
-                  .dtype(torch::kInt32)
-                  .device(model.device)
-                  .layout(torch::kStrided); 
     tensor_int64 = torch::TensorOptions() 
                   .dtype(torch::kInt64)
                   .device(model.device)
@@ -132,11 +128,6 @@ protected:
    * A representation of the model
    */
   torch::jit::script::Module module;
-
-  /**
-   * Stores options how integer tensor are stored (e.g. for atomic indices) -> int32
-  */
-  torch::TensorOptions tensor_int32;
 
   /**
    * Stores options how integer tensor are stored (e.g. for atomic indices) -> int64

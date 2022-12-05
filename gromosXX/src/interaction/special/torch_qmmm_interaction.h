@@ -111,9 +111,9 @@ private:
   virtual int get_num_charges(const simulation::Simulation &sim) const;
 
   /**
-   * A (non-owning) pointer to the QM zone
-   */
-  QM_Zone *qm_zone_ptr;
+   * A copy of the QM zone, is refreshed every step
+  */
+  QM_Zone qm_zone;
 
   /**
    * A (non_owning) pointer to the QMMM interaction

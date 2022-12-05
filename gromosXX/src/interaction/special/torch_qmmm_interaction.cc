@@ -57,6 +57,7 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
 
   // TODO: copy QM zone instead of using pointers, would make virial calculation easier
   // TODO: is PBC taken care of
+  // TODO: get_num_of charges from QM_Worker
 
   err = init_qm_zone();
   if (err)
@@ -80,24 +81,55 @@ int Torch_QMMM_Interaction<T>::init_qm_zone() {
     err = 1;
     return err;
   }
-  qm_zone_ptr = qmmm_ptr->qm_zone();
-  if (qm_zone_ptr == nullptr) {
+  if (qmmm_ptr->qm_zone() == nullptr) {
     io::messages.add("Unable to get QM zone in Torch QM/MM Interaction set-up",
                      "Torch_QMMM_Interaction", io::message::error);
     err = 1;
     return err;
   }
 
+  // initial copy of the QM zone
+  qm_zone = *(qmmm_ptr->qm_zone());
+
   // number of atoms in QM zone should not change over simulation
-  natoms = qm_zone_ptr->qm.size() + qm_zone_ptr->link.size();
+  natoms = qm_zone.qm.size() + qm_zone.link.size();
 
   return err;
 }
 
 template <typename T>
+int Torch_QMMM_Interaction<T>::init_qm_atom_numbers() {
+  int err = 0;
+  qm_atomic_numbers.resize(natoms);
+  qm_positions.resize(dimensions * natoms);
+
+  unsigned int i = 0;
+  DEBUG(15, "Initializing QM atom types");
+  for (std::set<QM_Atom>::const_iterator it = qm_zone.qm.begin(),
+                                         to = qm_zone.qm.end();
+       it != to; ++it, ++i) {
+    DEBUG(15, it->index << " " << it->atomic_number);
+    this->qm_atomic_numbers[i] = it->atomic_number;
+  }
+  // QM link atoms (iterator i keeps running)
+  DEBUG(15, "Initializing capping atom types");
+  for (std::set<QM_Link>::const_iterator it = qm_zone.link.begin(),
+                                         to = qm_zone.link.end();
+       it != to; ++it, ++i) {
+    DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
+                              << it->atomic_number);
+    this->qm_atomic_numbers[i] = it->atomic_number;
+  }
+  return err;
+}
+
+template <typename T>
 int Torch_QMMM_Interaction<T>::prepare_input(const simulation::Simulation &sim) {
+  // get a new copy of the QM zone
+  qm_zone = *(qmmm_ptr->qm_zone());
+
   // get size of QM zone and MM zone
-  assert(static_cast<int>(qm_zone_ptr->qm.size() + qm_zone_ptr->link.size()) ==
+  assert(static_cast<int>(qm_zone.qm.size() + qm_zone.link.size()) ==
          natoms);
   ncharges = get_num_charges(sim);
 
@@ -114,32 +146,6 @@ int Torch_QMMM_Interaction<T>::prepare_input(const simulation::Simulation &sim) 
 }
 
 template <typename T>
-int Torch_QMMM_Interaction<T>::init_qm_atom_numbers() {
-  int err = 0;
-  qm_atomic_numbers.resize(natoms);
-  qm_positions.resize(dimensions * natoms);
-
-  unsigned int i = 0;
-  DEBUG(15, "Initializing QM atom types");
-  for (std::set<QM_Atom>::const_iterator it = qm_zone_ptr->qm.begin(),
-                                         to = qm_zone_ptr->qm.end();
-       it != to; ++it, ++i) {
-    DEBUG(15, it->index << " " << it->atomic_number);
-    this->qm_atomic_numbers[i] = it->atomic_number;
-  }
-  // QM link atoms (iterator i keeps running)
-  DEBUG(15, "Initializing capping atom types");
-  for (std::set<QM_Link>::const_iterator it = qm_zone_ptr->link.begin(),
-                                         to = qm_zone_ptr->link.end();
-       it != to; ++it, ++i) {
-    DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
-                              << it->atomic_number);
-    this->qm_atomic_numbers[i] = it->atomic_number;
-  }
-  return err;
-}
-
-template <typename T>
 int Torch_QMMM_Interaction<T>::prepare_qm_atoms() {
   int err = 0;
   // Gromos -> Torch length unit is inverse of input value from Torch
@@ -149,8 +155,8 @@ int Torch_QMMM_Interaction<T>::prepare_qm_atoms() {
   // transfer QM coordinates
   DEBUG(15, "Transfering QM coordinates to Torch");
   unsigned int i = 0;
-  for (std::set<QM_Atom>::const_iterator it = qm_zone_ptr->qm.begin(),
-                                         to = qm_zone_ptr->qm.end();
+  for (std::set<QM_Atom>::const_iterator it = qm_zone.qm.begin(),
+                                         to = qm_zone.qm.end();
        it != to; ++it) {
     DEBUG(15, it->index << " " << it->atomic_number << " "
                         << math::v2s(it->pos * len_to_torch));
@@ -159,8 +165,8 @@ int Torch_QMMM_Interaction<T>::prepare_qm_atoms() {
   }
   // transfer capping atoms (index i keeps running...)
   DEBUG(15, "Transfering capping atoms coordinates to Torch");
-  for (std::set<QM_Link>::const_iterator it = qm_zone_ptr->link.begin(),
-                                         to = qm_zone_ptr->link.end();
+  for (std::set<QM_Link>::const_iterator it = qm_zone.link.begin(),
+                                         to = qm_zone.link.end();
        it != to; it++) {
     DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
                               << it->atomic_number << " "
@@ -187,8 +193,8 @@ int Torch_QMMM_Interaction<T>::prepare_mm_atoms() {
 
   unsigned int i =
       0; // iterate over atoms - keep track of the offset for Fortran arrays
-  for (std::set<MM_Atom>::const_iterator it = qm_zone_ptr->mm.begin(),
-                                         to = qm_zone_ptr->mm.end();
+  for (std::set<MM_Atom>::const_iterator it = qm_zone.mm.begin(),
+                                         to = qm_zone.mm.end();
        it != to; ++it) {
     // memory layout of point charge arrays:
     // numbers (1d), charges (1d), point_charges (3d): one-dimensional arrays
@@ -235,7 +241,7 @@ int Torch_QMMM_Interaction<T>::build_tensors(const simulation::Simulation &sim) 
       torch::from_blob(qm_positions.data(), {batch_size, natoms, dimensions},
                        this->tensor_float_gradient);
   mm_atomic_numbers_tensor = torch::from_blob(
-      mm_atomic_numbers.data(), {batch_size, ncharges}, this->tensor_int32);
+      mm_atomic_numbers.data(), {batch_size, ncharges}, this->tensor_int64);
   mm_charges_tensor =
       torch::from_blob(mm_charges.data(), {batch_size, ncharges},
                        this->tensor_float_no_gradient);
@@ -292,12 +298,9 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
   // QM atoms and QM links
   unsigned qm_atom = 0;
 
-  // calculate virial
-  math::Matrix virial_tensor(0.0);
-
   // Parse forces on QM atoms 
-  for (std::set<QM_Atom>::iterator it = qm_zone_ptr->qm.begin(),
-                                   to = qm_zone_ptr->qm.end();
+  for (std::set<QM_Atom>::iterator it = qm_zone.qm.begin(),
+                                   to = qm_zone.qm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradients of QM atom " << it->index);
     math::Vec force;
@@ -309,21 +312,13 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
     force[2] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
           this->model.unit_factor_force;     
     DEBUG(15, "Force: " << math::v2s(force));
-    conf.current().force(it->index) += force;
-    // calculate virial
-    math::Vec& pos = conf.current().pos(it->index);
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        virial_tensor(j,i) += pos(j) * force(i);
-      }
-    }
+    it->force = force; // save copy for virial calculation
     ++qm_atom;
   }
 
   // Parse forces on capping atoms (index i keeps running...) 
-  // TODO: does not work currently (!)
-  for (std::set<QM_Link>::iterator it = qm_zone_ptr->link.begin(),
-                                   to = qm_zone_ptr->link.end();
+  for (std::set<QM_Link>::iterator it = qm_zone.link.begin(),
+                                   to = qm_zone.link.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-"
                                                   << it->mm_index);
@@ -334,20 +329,22 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
           this->model.unit_factor_force;
     force[2] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
           this->model.unit_factor_force;
+    it->force = force; // save copy for distribution later
     DEBUG(15, "Redistributing force of capping atom");
     DEBUG(15, "QM-MM link: " << it->qm_index << " - " << it->mm_index);
-    std::set<QM_Atom>::iterator qm_it = this->qm_zone_ptr->qm.find(it->qm_index);
-    std::set<MM_Atom>::iterator mm_it = this->qm_zone_ptr->mm.find(it->mm_index);
-    assert(qm_it != this->qm_zone_ptr->qm.end());
-    assert(mm_it != this->qm_zone_ptr->mm.end());
+    std::set<QM_Atom>::iterator qm_it = this->qm_zone.qm.find(it->qm_index);
+    std::set<MM_Atom>::iterator mm_it = this->qm_zone.mm.find(it->mm_index);
+    assert(qm_it != this->qm_zone.qm.end());
+    assert(mm_it != this->qm_zone.mm.end());
+    // distribute forces over QM and MM (do before virial calculation)
     it->distribute_force(qm_it->pos, mm_it->pos, qm_it->force, mm_it->force);
     ++qm_atom;
   }
 
   // Parse forces on MM atoms
   unsigned int mm_atom = 0;
-  for (std::set<MM_Atom>::iterator it = qm_zone_ptr->mm.begin(),
-                                   to = qm_zone_ptr->mm.end();
+  for (std::set<MM_Atom>::iterator it = qm_zone.mm.begin(),
+                                   to = qm_zone.mm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of MM atom " << it->index);
     math::Vec force;
@@ -359,14 +356,7 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
     force[2] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
           this->model.unit_factor_force;
     DEBUG(15, "Force: " << math::v2s(force));
-    conf.current().force(it->index) += force;
-    // calculate virial
-    math::Vec& pos = conf.current().pos(it->index);
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        virial_tensor(j,i) += pos(j) * force(i);
-      }
-    }
+    it->force = force; // save copy for virial calculation
     if (it->is_polarisable) {
       ++mm_atom; // COS gradients live directly past the corresponding MM
                  // gradients
@@ -379,16 +369,41 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
       cos_force[2] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
             this->model.unit_factor_force;
       DEBUG(15, "Force " << math::v2s(cos_force));
-      conf.current().force(it->index) += force;
-      // calculate virial
-      math::Vec& pos = conf.current().pos(it->index);
-      for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-          virial_tensor(j,i) += pos(j) * force(i);
-        }
-      }
+      it->cos_force = cos_force; // save copy for virial calculation
     }
     ++mm_atom;
+  }
+
+  // calculate virial and update forces
+  // TODO: COS not processed / updated
+  math::Matrix virial_tensor(0.0);
+
+  // QM atoms
+  for (std::set<QM_Atom>::const_iterator
+      it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it)
+    {
+    DEBUG(15, "Atom " << it->index << ", force: " << math::v2s(it->force));
+    conf.current().force(it->index) += it->force;
+    math::Vec& pos = conf.current().pos(it->index);
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        virial_tensor(j,i) += pos(j) * it->force(i);
+      }
+    }
+  }
+
+  // MM atoms
+  for (std::set<MM_Atom>::const_iterator
+      it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it)
+    {
+    DEBUG(15, "Atom " << it->index << ", force: " << math::v2s(it->force));
+    conf.current().force(it->index) += it->force;
+    math::Vec& pos = conf.current().pos(it->index);
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        virial_tensor(j,i) += pos(j) * it->force(i);
+      }
+    }
   }
   
   // add virial contribution
@@ -408,13 +423,13 @@ int Torch_QMMM_Interaction<T>::get_num_charges(const simulation::Simulation &sim
     break;
   }
   case simulation::qmmm_electrostatic: {
-    num_charges = qm_zone_ptr->mm.size();
+    num_charges = qm_zone.mm.size();
     break;
   }
   case simulation::qmmm_polarisable: {
-    num_charges = qm_zone_ptr->mm.size();
-    for (std::set<MM_Atom>::const_iterator it = qm_zone_ptr->mm.begin(),
-                                           to = qm_zone_ptr->mm.end();
+    num_charges = qm_zone.mm.size();
+    for (std::set<MM_Atom>::const_iterator it = qm_zone.mm.begin(),
+                                           to = qm_zone.mm.end();
          it != to; ++it) {
       num_charges += int(it->is_polarisable);
     }
