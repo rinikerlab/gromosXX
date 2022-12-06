@@ -168,10 +168,12 @@ namespace simulation
      * Default constructor: all atoms, float32 on CPU, all unit conversions 1.0
     */
     torch_model() : 
+    model_name(""),
     atom_selection(torch_all),
     filename(""),
     precision(torch::kFloat32),
     device(torch::kCPU),
+    write(0),
     unit_factor_length(1.0), 
     unit_factor_energy(1.0), 
     unit_factor_force(1.0), 
@@ -179,15 +181,22 @@ namespace simulation
     /**
      * Pass which atoms to send and which model to load
     */
-    torch_model(torch_atom_enum atoms, const std::string& filename, torch::Dtype precision, const torch::Device& device, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
+    torch_model(const std::string& model_name, torch_atom_enum atoms, const std::string& filename, torch::Dtype precision, const torch::Device& device, int write, double unit_factor_length, double unit_factor_energy, double unit_factor_force, double unit_factor_charge) : 
+      model_name(model_name),
       atom_selection(atoms), 
       filename(filename), 
       precision(precision),
       device(torch::kCPU),
+      write(write),
       unit_factor_length(unit_factor_length), 
       unit_factor_energy(unit_factor_energy), 
       unit_factor_force(unit_factor_force), 
       unit_factor_charge(unit_factor_charge) {} 
+    
+    /**
+     * A (unique) name for the model
+    */
+    std::string model_name;
     /**
      * which atoms go to the model
      */
@@ -204,6 +213,10 @@ namespace simulation
      * device all models will run on
      */
     torch::Device device;
+    /**
+     * write Torch related data to special trajectory (NTWTORCH)
+     */
+    int write;
      /**
      * factor to convert the Torch length unit to the GROMOS one
      */

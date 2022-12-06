@@ -15,8 +15,6 @@
 #include "../../simulation/simulation.h"
 #include "../../configuration/configuration.h"
 
-#include <vector>
-
 #include <torch/csrc/autograd/function.h>
 #include <torch/csrc/autograd/variable.h>
 #include <torch/torch.h>
@@ -106,7 +104,100 @@ private:
                             const simulation::Simulation &sim) override;
 
   /**
+   * Saves Torch input data
+   */
+  virtual void save_torch_input(const unsigned int step
+                              , const simulation::Simulation& sim) override;
+
+  /**
+   * Saves Torch output data
+   */
+  virtual void save_torch_output(const unsigned int step
+                               , const simulation::Simulation& sim) override;
+  
+  /**
+   * Saves the QM coordinates sent to Torch
+   */
+  virtual void save_input_coord(std::ofstream& ifs
+                              , const unsigned int step);
+
+  /**
+   * Saves the MM coordinates and charges sent to Torch
+   */
+  virtual void save_input_point_charges(std::ofstream& ifs
+                                      , const unsigned int step
+                                      , const unsigned int ncharges);
+
+  /**
+   * Saves the gradients from backwards call on Torch model
+   */
+  virtual void save_output_gradients(std::ofstream& ifs
+                                   , const unsigned int step);
+
+  /**
+   * Saves the point charge gradients from backwards call on Torch model
+   */
+  virtual void save_output_pc_gradients(std::ofstream& ifs
+                                      , const unsigned int step);
+
+  /**
+   * Saves the charges calculated by Torch model (not implemented)
+   */
+  virtual void save_output_charges(std::ofstream& ifs
+                                 , const unsigned int step);
+
+  /**
+   * Helper function to write the current step size
+   */
+  virtual void write_step_size(std::ofstream& ifs, 
+                               const unsigned int step) const;
+
+  /**
+   * Helper function to write the header in coordinate files
+   */
+  virtual void write_coordinate_header(std::ofstream& ifs) const;
+
+  /**
+   * Helper function to write the footer in coordinate files
+   */
+  virtual void write_coordinate_footer(std::ofstream& ifs) const;
+
+  /**
+   * Helper function to write a single gradient to a file
+   */
+  virtual void write_gradient(const math::Vec& gradient, 
+                              std::ofstream& inputfile_stream) const;
+
+  /**
+   * Helper function to write a single QM atom to a file
+   */
+  virtual void write_qm_atom(std::ofstream& inputfile_stream
+                           , const int atomic_number
+                           , const math::Vec& pos) const;
+
+  /**
+   * Helper function to write a single MM atom to a file
+   */
+  virtual void write_mm_atom(std::ofstream& inputfile_stream
+                           , const int atomic_number
+                           , const math::Vec& pos
+                           , const double charge) const;
+
+  /**
+   * Helper function to write a single charge to a file (not completely implemented)
+   */
+  virtual void write_charge(std::ofstream& inputfile_stream
+                          , const int atomic_number
+                          , const double charge) const;
+
+  /**
+   * Helper function to open a file
+   */
+  virtual int open_input(std::ofstream& inputfile_stream, const std::string& input_file) const;
+  
+  /**
    * Computes the number of charges like in QM_Worker.cc
+   * TODO: combine with QM_Worker.cc
    */
   virtual int get_num_charges(const simulation::Simulation &sim) const;
 
@@ -139,6 +230,32 @@ private:
    * How many Cartesian coordinates
   */
   unsigned dimensions;
+
+  /**
+   * Handle to the input coordinate trajectory (Torch/QM) 
+   */
+  mutable std::ofstream input_coordinate_stream;
+
+  /**
+   * Handle to the input point charge trajectory (Torch/QM) 
+   */
+  mutable std::ofstream input_point_charge_stream;
+
+  /**
+   * Handle to the output gradient trajectory (Torch/QM) 
+   */
+  mutable std::ofstream output_gradient_stream;
+
+  /**
+   * Handle to the output point charge gradient trajectory (Torch/QM) 
+   */
+  mutable std::ofstream output_point_charge_gradient_stream;
+
+  /**
+   * Handle to the output charges trajectory (Torch/QM)
+   * TODO: not implemented 
+   */
+  mutable std::ofstream output_charges_stream;
 
   /**
    * Atomic numbers of the QM zone as C style array

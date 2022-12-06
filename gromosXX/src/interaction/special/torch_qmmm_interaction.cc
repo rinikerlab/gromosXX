@@ -55,6 +55,34 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
   batch_size = 1;
   dimensions = 3;
 
+  // open trajectory streams
+  if (this->model.write > 0) {
+    // output filenames
+    std::string trajectory_input_coordinate_file = this->model.model_name + ".coord";
+    std::string trajectory_input_pointcharges_file = this->model.model_name + ".pc";
+    std::string trajectory_output_gradient_file = this->model.model_name + ".engrad";
+    std::string trajectory_output_mm_gradient_file = this->model.model_name + ".pcgrad";
+    // coordinates
+    int err = open_input(input_coordinate_stream, trajectory_input_coordinate_file);
+    if (err) return err;
+    // gradients
+    err = open_input(output_gradient_stream, trajectory_output_gradient_file);
+    if (err) return err;
+
+    if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
+      // point charges
+      err = open_input(input_point_charge_stream, trajectory_input_pointcharges_file);
+      if (err) return err;
+      // point charge gradients
+      err = open_input(output_point_charge_gradient_stream, trajectory_output_mm_gradient_file);
+      if (err) return err;
+    }
+    else { // mechanical embedding
+      // charges
+      // TODO: not implemented yet
+    }
+  }
+
   // TODO: is PBC taken care of
   // TODO: get_num_of charges from QM_Worker
 
@@ -285,6 +313,7 @@ int Torch_QMMM_Interaction<T>::update_energy(topology::Topology &topo,
   double energy = static_cast<double>(energy_tensor.item<T>()) *
                   this->model.unit_factor_energy;
   DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol");
+  qm_zone.QM_energy() = energy; // temporary storage for trajectory write-out
   conf.current().energies.torch_total = energy;
   // TODO: split energies depending on which model it is and print
   return 0;
@@ -410,6 +439,231 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
     conf.current().virial_tensor += virial_tensor;
   }
 
+  return 0;
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_torch_input(const unsigned int step
+                                               , const simulation::Simulation& sim) {
+  save_input_coord(input_coordinate_stream, step);
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
+    save_input_point_charges(input_point_charge_stream, step, get_num_charges(sim));
+  }
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_torch_output(const unsigned int step
+                                                , const simulation::Simulation& sim) {
+  save_output_gradients(output_gradient_stream, step);
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
+    save_output_pc_gradients(output_point_charge_gradient_stream, step);
+  }
+  else { // mechanical embedding
+    // TODO: not implemented
+  }
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
+                                               , const unsigned int step) {
+  // Gromos -> Bohr (Turbomole format)
+  const double len_to_qm = 1.0 / 0.05291772109;
+
+  // write step size
+  this->write_step_size(ifs, step);
+
+  // write QM coordinates
+  this->write_coordinate_header(ifs);
+  DEBUG(15, "Writing Torch QM coordinates");
+  for (std::set<QM_Atom>::const_iterator 
+         it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
+    DEBUG(15, it->index << " " << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
+    this->write_qm_atom(ifs, it->atomic_number, it->pos * len_to_qm);
+  }
+  // write capping atoms 
+  DEBUG(15, "Writing Torch capping atoms coordinates");
+  for (std::set<QM_Link>::const_iterator it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; it++) {
+    DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
+      << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
+    this->write_qm_atom(ifs, it->atomic_number, it->pos * len_to_qm);
+  } 
+  this->write_coordinate_footer(ifs);
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
+                                                       , const unsigned int step
+                                                       , const unsigned int ncharges) {
+  // Gromos -> Bohr (Turbomole format)
+  const double cha_to_qm = 1.0;
+  const double len_to_qm = 1.0 / 0.05291772109;
+
+  // write step size
+  this->write_step_size(ifs, step);
+
+  // write QM coordinates
+  ifs << ncharges << '\n';
+  for (std::set<MM_Atom>::const_iterator
+         it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
+    if (it->is_polarisable) {
+      // MM atom minus COS
+      DEBUG(15, it->index << " " << it->atomic_number << " " 
+        << (it->charge - it->cos_charge) * cha_to_qm << " " << math::v2s(it->pos * len_to_qm));
+      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, (it->charge - it->cos_charge) * cha_to_qm);
+      // COS
+      DEBUG(15, it->index << " " << it->atomic_number << " " 
+        << it->cos_charge * cha_to_qm << " " << math::v2s((it->pos + it->cosV) * len_to_qm));
+      this->write_mm_atom(ifs, it->atomic_number, it->cosV * len_to_qm, it->cos_charge * cha_to_qm);
+    }
+    else {
+      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, it->charge * cha_to_qm);
+    }
+  }
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
+                                                    , const unsigned int step) {
+  // Gromos -> Hartree / Bohr (Turbomole format)
+  const double energy_to_qm = 1.0 / 2625.499639;
+  const double force_to_qm = 1.0 / (2625.499639 / 0.05291772109);
+
+  // write step size
+  this->write_step_size(ifs, step);
+
+  // Write energy
+  ifs.setf(std::ios::fixed, std::ios::floatfield);
+  ifs << std::setprecision(12);
+  ifs << "ENERGY: " << qm_zone.QM_energy() * energy_to_qm << '\n';
+
+  // Write QM atoms
+  for (std::set<QM_Atom>::iterator
+         it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
+    // forces = negative gradient (!)
+    DEBUG(15, "Writing gradients of QM atom " << it->index);
+    this->write_gradient(-1.0 * it->force * force_to_qm, ifs);
+    DEBUG(15, "Force: " << math::v2s(it->force));
+  }
+  // Write capping atoms (index i keeps running...)
+  for (std::set<QM_Link>::iterator
+         it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; ++it) {
+    DEBUG(15, "Writing gradient of capping atom " << it->qm_index << "-" << it->mm_index);
+    this->write_gradient(-1.0 * it->force * force_to_qm, ifs);
+    DEBUG(15, "Force: " << math::v2s(it->force));
+  }
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_output_pc_gradients(std::ofstream& ifs
+                                                       , const unsigned int step) {
+  // Gromos -> Hartree / Bohr (Turbomole format)
+  const double force_to_qm = 1.0 / (2625.499639 / 0.05291772109);
+
+  // write step size
+  this->write_step_size(ifs, step);
+
+  // Parse MM atoms
+  for (std::set<MM_Atom>::iterator
+         it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
+    // forces = negative gradient (!)
+    DEBUG(15,"Writing gradient of MM atom " << it->index);
+    this->write_gradient(-1.0 * it->force * force_to_qm, ifs);
+    DEBUG(15, "Force: " << math::v2s(it->force));
+    if (it->is_polarisable) {
+      DEBUG(15, "Writing gradient of COS of MM atom " << it->index);
+      this->write_gradient(-1.0 * it->cos_force * force_to_qm, ifs);
+      DEBUG(15, "Force " << math::v2s(it->cos_force));
+    }
+  }
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::save_output_charges(std::ofstream& ifs
+                                                  , const unsigned int step) {
+  // TODO: not implemented
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_step_size(std::ofstream& ifs, 
+                                                const unsigned int step) const {
+  ifs << "TIMESTEP" << '\n';
+  ifs << "    " << step << '\n';
+  ifs << "END" << '\n';
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_coordinate_header(std::ofstream& ifs) const {
+  // TURBOMOLE format
+  ifs << "$coord" << '\n';
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_coordinate_footer(std::ofstream& ifs) const {
+  // TURBOMOLE format
+  ifs << "$end" << '\n';
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_gradient(const math::Vec& gradient, 
+                                               std::ofstream& inputfile_stream) const {
+  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
+  inputfile_stream << std::setprecision(12)
+                   << std::setw(17) << gradient(0)
+                   << std::setw(17) << gradient(1)
+                   << std::setw(17) << gradient(2)
+                   << '\n';
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_qm_atom(std::ofstream& inputfile_stream
+                                            , const int atomic_number
+                                            , const math::Vec& pos) const {
+  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
+  inputfile_stream << std::setprecision(20)
+                   << std::setw(25) << pos(0)
+                   << std::setw(25) << pos(1)
+                   << std::setw(25) << pos(2)
+                   << std::setw(8)  << atomic_number
+                   << '\n';
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_mm_atom(std::ofstream& inputfile_stream
+                                            , const int atomic_number
+                                            , const math::Vec& pos
+                                            , const double charge) const {
+  if (charge != 0.0) {
+    inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
+    inputfile_stream << std::setprecision(6)
+                     << std::setw(10) << charge
+                     << std::setprecision(20)
+                     << std::setw(25) << pos(0)
+                     << std::setw(25) << pos(1)
+                     << std::setw(25) << pos(2) 
+                     << std::setw(8)  << atomic_number
+                     << '\n';
+  }
+}
+
+template <typename T>
+void Torch_QMMM_Interaction<T>::write_charge(std::ofstream& inputfile_stream
+                                           , const int atomic_number
+                                           , const double charge) const {
+  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
+  inputfile_stream << std::setprecision(6)
+                   << std::setw(10) << charge
+                   << std::setw(8)  << atomic_number
+                   << '\n';
+}
+
+template <typename T>
+int Torch_QMMM_Interaction<T>::open_input(std::ofstream& inputfile_stream, const std::string& input_file) const {
+  inputfile_stream.open(input_file.c_str()); 
+  if (!inputfile_stream.is_open()) {
+    io::messages.add("Unable to write to file: "
+            + input_file, this->model.model_name, io::message::error);
+    return 1;
+  }
   return 0;
 }
 

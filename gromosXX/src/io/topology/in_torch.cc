@@ -54,9 +54,9 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
                    "In_Torch", io::message::notice);
   simulation::torch_model model;
   unsigned atoms;
-  int precision, device;
+  int precision, device, write;
   while (!_lineStream.eof()) {
-    _lineStream >> atoms >> model.filename >> precision >> device >> model.unit_factor_length >>
+    _lineStream >> model.model_name >> atoms >> model.filename >> precision >> device >> write >> model.unit_factor_length >>
         model.unit_factor_energy >> model.unit_factor_force >> model.unit_factor_charge;
     if (_lineStream.fail()) {
       io::messages.add("Cannot read MODELS block", "In_Torch",
@@ -120,6 +120,16 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
         "In_Torch", io::message::error);
     return;
   }
+
+  // NTWTORCH
+  if (write < 0) {
+    io::messages.add(
+        "Invalid write-out frequency specified in Torch specification file: " +
+            write,
+        "In_Torch", io::message::error);
+    return;
+  }
+  model.write = write;
 
   sim.param().torch.models.push_back(model);
 }

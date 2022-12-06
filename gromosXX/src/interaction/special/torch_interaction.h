@@ -110,6 +110,18 @@ protected:
                             const simulation::Simulation &sim) = 0;
 
   /**
+   * Saves Torch input data
+   */
+  virtual void save_torch_input(const unsigned int step
+                              , const simulation::Simulation& sim) = 0;
+
+  /**
+   * Saves Torch output data
+   */
+  virtual void save_torch_output(const unsigned int step
+                               , const simulation::Simulation& sim) = 0;
+  
+  /**
    * Print units conversion factors
    */
   virtual void print_unit_factors(std::ostream & os) const {

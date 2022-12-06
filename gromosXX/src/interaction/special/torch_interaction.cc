@@ -91,6 +91,14 @@ int Torch_Interaction<T>::calculate_interactions(
     return err;
   m_timer.stop_subtimer("Preparing input");
 
+  if ((model.write > 0) &&
+	  ((sim.steps()) % (model.write) == 0)) {
+    m_timer.start_subtimer("writing Torch input");
+    // steps reported in output are steps finished already
+    save_torch_input(sim.steps(), sim);
+    m_timer.stop_subtimer("writing Torch input");
+  }
+
   m_timer.start_subtimer("Building tensor");
   err = build_tensors(sim);
   if (err)
@@ -117,6 +125,14 @@ int Torch_Interaction<T>::calculate_interactions(
   if (err)
     return err;
   m_timer.stop_subtimer("Parsing tensors");
+
+  if ((model.write > 0) &&
+	  ((sim.steps()) % (model.write) == 0)) {
+    m_timer.start_subtimer("writing Torch output");
+    // steps reported in output are steps finished already
+    save_torch_output(sim.steps(), sim);
+    m_timer.stop_subtimer("writing Torch output");
+  }
 
   m_timer.stop();
 
