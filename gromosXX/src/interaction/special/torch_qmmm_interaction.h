@@ -56,7 +56,9 @@ private:
   /**
    * Prepares the coordinates according to the atom selection scheme selected
    */
-  virtual int prepare_input(const simulation::Simulation &sim) override;
+  virtual int prepare_input(const topology::Topology& topo, 
+                            const configuration::Configuration& conf, 
+                            const simulation::Simulation& sim) override;
 
   /**
    * Sets-up the vector with QM atom types
@@ -107,12 +109,16 @@ private:
    * Saves Torch input data
    */
   virtual void save_torch_input(const unsigned int step
+                              , const topology::Topology& topo
+                              , const configuration::Configuration& conf
                               , const simulation::Simulation& sim) override;
 
   /**
    * Saves Torch output data
    */
   virtual void save_torch_output(const unsigned int step
+                               , const topology::Topology& topo
+                               , const configuration::Configuration& conf
                                , const simulation::Simulation& sim) override;
   
   /**
@@ -129,7 +135,7 @@ private:
                                       , const unsigned int ncharges);
 
   /**
-   * Saves the gradients from backwards call on Torch model
+   * Saves the energy and gradients from backwards call on Torch model
    */
   virtual void save_output_gradients(std::ofstream& ifs
                                    , const unsigned int step);
@@ -147,35 +153,6 @@ private:
                                  , const unsigned int step);
 
   /**
-   * Helper function to write the current step size
-   */
-  virtual void write_step_size(std::ofstream& ifs, 
-                               const unsigned int step) const;
-
-  /**
-   * Helper function to write the header in coordinate files
-   */
-  virtual void write_coordinate_header(std::ofstream& ifs) const;
-
-  /**
-   * Helper function to write the footer in coordinate files
-   */
-  virtual void write_coordinate_footer(std::ofstream& ifs) const;
-
-  /**
-   * Helper function to write a single gradient to a file
-   */
-  virtual void write_gradient(const math::Vec& gradient, 
-                              std::ofstream& inputfile_stream) const;
-
-  /**
-   * Helper function to write a single QM atom to a file
-   */
-  virtual void write_qm_atom(std::ofstream& inputfile_stream
-                           , const int atomic_number
-                           , const math::Vec& pos) const;
-
-  /**
    * Helper function to write a single MM atom to a file
    */
   virtual void write_mm_atom(std::ofstream& inputfile_stream
@@ -189,11 +166,6 @@ private:
   virtual void write_charge(std::ofstream& inputfile_stream
                           , const int atomic_number
                           , const double charge) const;
-
-  /**
-   * Helper function to open a file
-   */
-  virtual int open_input(std::ofstream& inputfile_stream, const std::string& input_file) const;
   
   /**
    * Computes the number of charges like in QM_Worker.cc

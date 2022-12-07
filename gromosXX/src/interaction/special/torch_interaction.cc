@@ -86,7 +86,7 @@ int Torch_Interaction<T>::calculate_interactions(
   m_timer.start(sim);
 
   m_timer.start_subtimer("Preparing input");
-  int err = prepare_input(sim);
+  int err = prepare_input(topo, conf, sim);
   if (err)
     return err;
   m_timer.stop_subtimer("Preparing input");
@@ -95,7 +95,7 @@ int Torch_Interaction<T>::calculate_interactions(
 	  ((sim.steps()) % (model.write) == 0)) {
     m_timer.start_subtimer("Writing Torch input");
     // steps reported in output are steps finished already
-    save_torch_input(sim.steps(), sim);
+    save_torch_input(sim.steps(), topo, conf, sim);
     m_timer.stop_subtimer("Writing Torch input");
   }
 
@@ -130,13 +130,68 @@ int Torch_Interaction<T>::calculate_interactions(
 	  ((sim.steps()) % (model.write) == 0)) {
     m_timer.start_subtimer("Writing Torch output");
     // steps reported in output are steps finished already
-    save_torch_output(sim.steps(), sim);
+    save_torch_output(sim.steps(), topo, conf, sim);
     m_timer.stop_subtimer("Writing Torch output");
   }
 
   m_timer.stop();
 
   return err;
+}
+
+template <typename T>
+void Torch_Interaction<T>::write_step_size(std::ofstream& ifs, 
+                                           const unsigned int step) const {
+  ifs << "TIMESTEP" << '\n';
+  ifs << "    " << step << '\n';
+  ifs << "END" << '\n';
+}
+
+template <typename T>
+void Torch_Interaction<T>::write_coordinate_header(std::ofstream& ifs) const {
+  // TURBOMOLE format
+  ifs << "$coord" << '\n';
+}
+
+template <typename T>
+void Torch_Interaction<T>::write_coordinate_footer(std::ofstream& ifs) const {
+  // TURBOMOLE format
+  ifs << "$end" << '\n';
+}
+
+template <typename T>
+void Torch_Interaction<T>::write_gradient(const math::Vec& gradient, 
+                                          std::ofstream& inputfile_stream) const {
+  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
+  inputfile_stream << std::setprecision(12)
+                   << std::setw(17) << gradient(0)
+                   << std::setw(17) << gradient(1)
+                   << std::setw(17) << gradient(2)
+                   << '\n';
+}
+
+template <typename T>
+void Torch_Interaction<T>::write_atom(std::ofstream& inputfile_stream
+                                    , const int atomic_number
+                                    , const math::Vec& pos) const {
+  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
+  inputfile_stream << std::setprecision(20)
+                   << std::setw(25) << pos(0)
+                   << std::setw(25) << pos(1)
+                   << std::setw(25) << pos(2)
+                   << std::setw(8)  << atomic_number
+                   << '\n';
+}
+
+template <typename T>
+int Torch_Interaction<T>::open_input(std::ofstream& inputfile_stream, const std::string& input_file) const {
+  inputfile_stream.open(input_file.c_str()); 
+  if (!inputfile_stream.is_open()) {
+    io::messages.add("Unable to write to file: "
+            + input_file, this->model.model_name, io::message::error);
+    return 1;
+  }
+  return 0;
 }
 
 // explicit instantiations: 

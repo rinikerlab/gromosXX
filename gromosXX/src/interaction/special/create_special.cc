@@ -43,6 +43,7 @@
 
 #ifdef WITH_TORCH
 #include "../../interaction/special/torch_interaction.h"
+#include "../../interaction/special/torch_global_interaction.h"
 #include "../../interaction/special/torch_qmmm_interaction.h"
 #endif
 
@@ -77,9 +78,11 @@ int interaction::create_special(interaction::Forcefield & ff,
     // iterate over all models and create special interactions for each
     for (const auto& model : param.torch.models) {
       switch (model.atom_selection) {
-        case simulation::torch_all: io::messages.add("All atom specifier not yet implemented for Torch interaction", 
-             io::message::error); 
-             return 1;
+        case simulation::torch_all:
+             interaction::add_torch_model<interaction::Torch_Global_Interaction>(model, ff);
+             if (!quiet) {
+              os << "\t\tAdded model : " << model.filename << "\n";
+             }
              break;
         case simulation::torch_qmmm:
              interaction::add_torch_model<interaction::Torch_QMMM_Interaction>(model, ff);

@@ -78,7 +78,9 @@ protected:
   /**
    * Prepares the coordinates according to the atom selection scheme selected
    */
-  virtual int prepare_input(const simulation::Simulation &sim) = 0;
+  virtual int prepare_input(const topology::Topology& topo, 
+                            const configuration::Configuration& conf, 
+                            const simulation::Simulation& sim) = 0;
 
   /**
    * Initializes tensors ready to go into the model
@@ -113,14 +115,52 @@ protected:
    * Saves Torch input data
    */
   virtual void save_torch_input(const unsigned int step
+                              , const topology::Topology& topo
+                              , const configuration::Configuration& conf
                               , const simulation::Simulation& sim) = 0;
 
   /**
    * Saves Torch output data
    */
   virtual void save_torch_output(const unsigned int step
+                               , const topology::Topology& topo
+                               , const configuration::Configuration& conf
                                , const simulation::Simulation& sim) = 0;
   
+  /**
+   * Helper function to write the current step size
+   */
+  virtual void write_step_size(std::ofstream& ifs, 
+                               const unsigned int step) const;
+
+  /**
+   * Helper function to write the header in coordinate files
+   */
+  virtual void write_coordinate_header(std::ofstream& ifs) const;
+
+  /**
+   * Helper function to write the footer in coordinate files
+   */
+  virtual void write_coordinate_footer(std::ofstream& ifs) const;
+
+  /**
+   * Helper function to write a single gradient to a file
+   */
+  virtual void write_gradient(const math::Vec& gradient, 
+                              std::ofstream& inputfile_stream) const;
+
+  /**
+   * Helper function to write a single QM atom to a file
+   */
+  virtual void write_atom(std::ofstream& inputfile_stream
+                           , const int atomic_number
+                           , const math::Vec& pos) const;
+
+  /**
+   * Helper function to open a file
+   */
+  virtual int open_input(std::ofstream& inputfile_stream, const std::string& input_file) const;
+
   /**
    * Print units conversion factors
    */

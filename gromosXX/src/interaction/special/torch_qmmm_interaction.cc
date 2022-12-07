@@ -63,18 +63,18 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
     std::string trajectory_output_gradient_file = this->model.model_name + ".engrad";
     std::string trajectory_output_mm_gradient_file = this->model.model_name + ".pcgrad";
     // coordinates
-    int err = open_input(input_coordinate_stream, trajectory_input_coordinate_file);
+    int err = this->open_input(input_coordinate_stream, trajectory_input_coordinate_file);
     if (err) return err;
     // gradients
-    err = open_input(output_gradient_stream, trajectory_output_gradient_file);
+    err = this->open_input(output_gradient_stream, trajectory_output_gradient_file);
     if (err) return err;
 
     if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
       // point charges
-      err = open_input(input_point_charge_stream, trajectory_input_pointcharges_file);
+      err = this->open_input(input_point_charge_stream, trajectory_input_pointcharges_file);
       if (err) return err;
       // point charge gradients
-      err = open_input(output_point_charge_gradient_stream, trajectory_output_mm_gradient_file);
+      err = this->open_input(output_point_charge_gradient_stream, trajectory_output_mm_gradient_file);
       if (err) return err;
     }
     else { // mechanical embedding
@@ -151,7 +151,10 @@ int Torch_QMMM_Interaction<T>::init_qm_atom_numbers() {
 }
 
 template <typename T>
-int Torch_QMMM_Interaction<T>::prepare_input(const simulation::Simulation &sim) {
+int Torch_QMMM_Interaction<T>::prepare_input(const topology::Topology& topo, 
+                                             const configuration::Configuration& conf, 
+                                             const simulation::Simulation& sim) {
+  DEBUG(15, "Preparing input");
   // get a new copy of the QM zone
   qm_zone = *(qmmm_ptr->qm_zone());
 
@@ -351,11 +354,11 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
     DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-"
                                                   << it->mm_index);
     math::Vec force;
-    force[0] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
+    force(0) = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
-    force[1] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
+    force(1) = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
           this->model.unit_factor_force;
-    force[2] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
+    force(2) = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
           this->model.unit_factor_force;
     it->force = force; // save copy for distribution later
     DEBUG(15, "Redistributing force of capping atom");
@@ -377,11 +380,11 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
     DEBUG(15, "Parsing gradient of MM atom " << it->index);
     math::Vec force;
     // forces = negative gradient (!)
-    force[0] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) *  // 0 idx for batch_size
+    force(0) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
-    force[1] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
+    force(1) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
           this->model.unit_factor_force;
-    force[2] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
+    force(2) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
           this->model.unit_factor_force;
     DEBUG(15, "Force: " << math::v2s(force));
     it->force = force; // save copy for virial calculation
@@ -390,11 +393,11 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
                  // gradients
       DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
       math::Vec cos_force;
-      cos_force[0] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) * // 0 idx for batch_size
+      cos_force(0) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) * // 0 idx for batch_size
             this->model.unit_factor_force;
-      cos_force[1] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
+      cos_force(1) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
             this->model.unit_factor_force;
-      cos_force[2] = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
+      cos_force(2) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
             this->model.unit_factor_force;
       DEBUG(15, "Force " << math::v2s(cos_force));
       it->cos_force = cos_force; // save copy for virial calculation
@@ -444,6 +447,8 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_torch_input(const unsigned int step
+                                               , const topology::Topology& topo
+                                               , const configuration::Configuration& conf
                                                , const simulation::Simulation& sim) {
   save_input_coord(input_coordinate_stream, step);
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
@@ -453,6 +458,8 @@ void Torch_QMMM_Interaction<T>::save_torch_input(const unsigned int step
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_torch_output(const unsigned int step
+                                                , const topology::Topology& topo
+                                                , const configuration::Configuration& conf
                                                 , const simulation::Simulation& sim) {
   save_output_gradients(output_gradient_stream, step);
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
@@ -478,14 +485,14 @@ void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
   for (std::set<QM_Atom>::const_iterator 
          it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
     DEBUG(15, it->index << " " << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
-    this->write_qm_atom(ifs, it->atomic_number, it->pos * len_to_qm);
+    this->write_atom(ifs, it->atomic_number, it->pos * len_to_qm);
   }
   // write capping atoms 
   DEBUG(15, "Writing Torch capping atoms coordinates");
   for (std::set<QM_Link>::const_iterator it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; it++) {
     DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
       << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
-    this->write_qm_atom(ifs, it->atomic_number, it->pos * len_to_qm);
+    this->write_atom(ifs, it->atomic_number, it->pos * len_to_qm);
   } 
   this->write_coordinate_footer(ifs);
 }
@@ -584,50 +591,6 @@ void Torch_QMMM_Interaction<T>::save_output_charges(std::ofstream& ifs
 }
 
 template <typename T>
-void Torch_QMMM_Interaction<T>::write_step_size(std::ofstream& ifs, 
-                                                const unsigned int step) const {
-  ifs << "TIMESTEP" << '\n';
-  ifs << "    " << step << '\n';
-  ifs << "END" << '\n';
-}
-
-template <typename T>
-void Torch_QMMM_Interaction<T>::write_coordinate_header(std::ofstream& ifs) const {
-  // TURBOMOLE format
-  ifs << "$coord" << '\n';
-}
-
-template <typename T>
-void Torch_QMMM_Interaction<T>::write_coordinate_footer(std::ofstream& ifs) const {
-  // TURBOMOLE format
-  ifs << "$end" << '\n';
-}
-
-template <typename T>
-void Torch_QMMM_Interaction<T>::write_gradient(const math::Vec& gradient, 
-                                               std::ofstream& inputfile_stream) const {
-  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
-  inputfile_stream << std::setprecision(12)
-                   << std::setw(17) << gradient(0)
-                   << std::setw(17) << gradient(1)
-                   << std::setw(17) << gradient(2)
-                   << '\n';
-}
-
-template <typename T>
-void Torch_QMMM_Interaction<T>::write_qm_atom(std::ofstream& inputfile_stream
-                                            , const int atomic_number
-                                            , const math::Vec& pos) const {
-  inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
-  inputfile_stream << std::setprecision(20)
-                   << std::setw(25) << pos(0)
-                   << std::setw(25) << pos(1)
-                   << std::setw(25) << pos(2)
-                   << std::setw(8)  << atomic_number
-                   << '\n';
-}
-
-template <typename T>
 void Torch_QMMM_Interaction<T>::write_mm_atom(std::ofstream& inputfile_stream
                                             , const int atomic_number
                                             , const math::Vec& pos
@@ -654,17 +617,6 @@ void Torch_QMMM_Interaction<T>::write_charge(std::ofstream& inputfile_stream
                    << std::setw(10) << charge
                    << std::setw(8)  << atomic_number
                    << '\n';
-}
-
-template <typename T>
-int Torch_QMMM_Interaction<T>::open_input(std::ofstream& inputfile_stream, const std::string& input_file) const {
-  inputfile_stream.open(input_file.c_str()); 
-  if (!inputfile_stream.is_open()) {
-    io::messages.add("Unable to write to file: "
-            + input_file, this->model.model_name, io::message::error);
-    return 1;
-  }
-  return 0;
 }
 
 template <typename T>
