@@ -600,9 +600,9 @@ void Torch_QMMM_Interaction<T>::write_mm_atom(std::ofstream& inputfile_stream
     inputfile_stream << std::setprecision(6)
                      << std::setw(10) << charge
                      << std::setprecision(20)
-                     << std::setw(27) << pos(0)
-                     << std::setw(27) << pos(1)
-                     << std::setw(27) << pos(2) 
+                     << std::setw(28) << pos(0)
+                     << std::setw(28) << pos(1)
+                     << std::setw(28) << pos(2) 
                      << std::setw(8)  << atomic_number
                      << '\n';
   }

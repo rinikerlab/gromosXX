@@ -164,9 +164,9 @@ void Torch_Interaction<T>::write_gradient(const math::Vec& gradient,
                                           std::ofstream& inputfile_stream) const {
   inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
   inputfile_stream << std::setprecision(12)
-                   << std::setw(19) << gradient(0)
-                   << std::setw(19) << gradient(1)
-                   << std::setw(19) << gradient(2)
+                   << std::setw(20) << gradient(0)
+                   << std::setw(20) << gradient(1)
+                   << std::setw(20) << gradient(2)
                    << '\n';
 }
 
@@ -176,9 +176,9 @@ void Torch_Interaction<T>::write_atom(std::ofstream& inputfile_stream
                                     , const math::Vec& pos) const {
   inputfile_stream.setf(std::ios::fixed, std::ios::floatfield);
   inputfile_stream << std::setprecision(20)
-                   << std::setw(27) << pos(0)
-                   << std::setw(27) << pos(1)
-                   << std::setw(27) << pos(2)
+                   << std::setw(28) << pos(0)
+                   << std::setw(28) << pos(1)
+                   << std::setw(28) << pos(2)
                    << std::setw(8)  << atomic_number
                    << '\n';
 }
