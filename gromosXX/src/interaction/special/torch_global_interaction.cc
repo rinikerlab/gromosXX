@@ -227,8 +227,9 @@ void Torch_Global_Interaction<T>::save_input_coord(std::ofstream& ifs
                                                  , const topology::Topology& topo
                                                  , const configuration::Configuration& conf
                                                  , const simulation::Simulation& sim) {
-  // Gromos -> Bohr (Turbomole format)
-  const double len_to_qm = 1.0 / 0.05291772109;
+  // Gromos -> Torch length unit is inverse of input value from Torch
+  // specification file
+  const double len_to_torch = 1.0 / this->model.unit_factor_length;
 
   // write step size
   this->write_step_size(ifs, step);
@@ -237,8 +238,8 @@ void Torch_Global_Interaction<T>::save_input_coord(std::ofstream& ifs
   this->write_coordinate_header(ifs);
   DEBUG(15, "Writing Torch coordinates");
   for (unsigned idx = 0; idx < natoms; ++idx) {
-    DEBUG(15, idx << " " << topo.qm_atomic_number(idx) << " " << math::v2s(conf.current().pos(idx) * len_to_qm));
-    this->write_atom(ifs, topo.qm_atomic_number(idx), conf.current().pos(idx) * len_to_qm);
+    DEBUG(15, idx << " " << topo.qm_atomic_number(idx) << " " << math::v2s(conf.current().pos(idx) * len_to_torch));
+    this->write_atom(ifs, topo.qm_atomic_number(idx), conf.current().pos(idx) * len_to_torch);
   }
   
   this->write_coordinate_footer(ifs);
@@ -250,9 +251,10 @@ void Torch_Global_Interaction<T>::save_output_gradients(std::ofstream& ifs
                                                       , const topology::Topology& topo
                                                       , const configuration::Configuration& conf
                                                       , const simulation::Simulation& sim) {
-  // Gromos -> Hartree / Bohr (Turbomole format)
-  const double energy_to_qm = 1.0 / 2625.499639;
-  const double force_to_qm = 1.0 / (2625.499639 / 0.05291772109);
+  // Gromos -> Torch unit is inverse of input value from Torch
+  // specification file
+  const double energy_to_torch = 1.0 / this->model.unit_factor_energy;
+  const double force_to_torch = 1.0 / this->model.unit_factor_force;
 
   // write step size
   this->write_step_size(ifs, step);
@@ -262,7 +264,7 @@ void Torch_Global_Interaction<T>::save_output_gradients(std::ofstream& ifs
   ifs << std::setprecision(12);
   double energy = static_cast<double>(energy_tensor.item<T>()) *
                   this->model.unit_factor_energy;
-  ifs << "ENERGY: " << energy * energy_to_qm << '\n';
+  ifs << "ENERGY: " << energy * energy_to_torch << '\n';
 
   // write forces
   DEBUG(15, "Writing Torch gradients");
@@ -278,7 +280,7 @@ void Torch_Global_Interaction<T>::save_output_gradients(std::ofstream& ifs
     DEBUG(15, "Atom " << idx << ", force: " << math::v2s(force));
     // forces = negative gradient (!)
     DEBUG(15, "Writing gradients of atom " << idx);
-    this->write_gradient(-1.0 * force * force_to_qm, ifs);
+    this->write_gradient(-1.0 * force * force_to_torch, ifs);
     DEBUG(15, "Force: " << math::v2s(force));
   }
   

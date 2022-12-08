@@ -473,8 +473,9 @@ void Torch_QMMM_Interaction<T>::save_torch_output(const unsigned int step
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
                                                , const unsigned int step) {
-  // Gromos -> Bohr (Turbomole format)
-  const double len_to_qm = 1.0 / 0.05291772109;
+  // Gromos -> Torch length unit is inverse of input value from Torch
+  // specification file
+  const double len_to_torch = 1.0 / this->model.unit_factor_length;
 
   // write step size
   this->write_step_size(ifs, step);
@@ -484,15 +485,15 @@ void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
   DEBUG(15, "Writing Torch QM coordinates");
   for (std::set<QM_Atom>::const_iterator 
          it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
-    DEBUG(15, it->index << " " << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
-    this->write_atom(ifs, it->atomic_number, it->pos * len_to_qm);
+    DEBUG(15, it->index << " " << it->atomic_number << " " << math::v2s(it->pos * len_to_torch));
+    this->write_atom(ifs, it->atomic_number, it->pos * len_to_torch);
   }
   // write capping atoms 
   DEBUG(15, "Writing Torch capping atoms coordinates");
   for (std::set<QM_Link>::const_iterator it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; it++) {
     DEBUG(15, "Capping atom " << it->qm_index << "-" << it->mm_index << " "
-      << it->atomic_number << " " << math::v2s(it->pos * len_to_qm));
-    this->write_atom(ifs, it->atomic_number, it->pos * len_to_qm);
+      << it->atomic_number << " " << math::v2s(it->pos * len_to_torch));
+    this->write_atom(ifs, it->atomic_number, it->pos * len_to_torch);
   } 
   this->write_coordinate_footer(ifs);
 }
@@ -501,10 +502,11 @@ template <typename T>
 void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
                                                        , const unsigned int step
                                                        , const unsigned int ncharges) {
-  // Gromos -> Bohr (Turbomole format)
-  const double cha_to_qm = 1.0;
-  const double len_to_qm = 1.0 / 0.05291772109;
-
+  // Gromos -> Torch unit is inverse of input value from Torch
+  // specification file
+  const double cha_to_torch = 1.0 / this->model.unit_factor_charge;
+  const double len_to_torch = 1.0 / this->model.unit_factor_length;
+  
   // write step size
   this->write_step_size(ifs, step);
 
@@ -515,15 +517,15 @@ void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
     if (it->is_polarisable) {
       // MM atom minus COS
       DEBUG(15, it->index << " " << it->atomic_number << " " 
-        << (it->charge - it->cos_charge) * cha_to_qm << " " << math::v2s(it->pos * len_to_qm));
-      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, (it->charge - it->cos_charge) * cha_to_qm);
+        << (it->charge - it->cos_charge) * cha_to_torch << " " << math::v2s(it->pos * len_to_torch));
+      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_torch, (it->charge - it->cos_charge) * cha_to_torch);
       // COS
       DEBUG(15, it->index << " " << it->atomic_number << " " 
-        << it->cos_charge * cha_to_qm << " " << math::v2s((it->pos + it->cosV) * len_to_qm));
-      this->write_mm_atom(ifs, it->atomic_number, it->cosV * len_to_qm, it->cos_charge * cha_to_qm);
+        << it->cos_charge * cha_to_torch << " " << math::v2s((it->pos + it->cosV) * len_to_torch));
+      this->write_mm_atom(ifs, it->atomic_number, it->cosV * len_to_torch, it->cos_charge * cha_to_torch);
     }
     else {
-      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, it->charge * cha_to_qm);
+      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_torch, it->charge * cha_to_torch);
     }
   }
 }
@@ -531,9 +533,10 @@ void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
                                                     , const unsigned int step) {
-  // Gromos -> Hartree / Bohr (Turbomole format)
-  const double energy_to_qm = 1.0 / 2625.499639;
-  const double force_to_qm = 1.0 / (2625.499639 / 0.05291772109);
+  // Gromos -> Torch unit is inverse of input value from Torch
+  // specification file
+  const double energy_to_torch = 1.0 / this->model.unit_factor_energy;
+  const double force_to_torch = 1.0 / this->model.unit_factor_force;
 
   // write step size
   this->write_step_size(ifs, step);
@@ -541,21 +544,21 @@ void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
   // Write energy
   ifs.setf(std::ios::fixed, std::ios::floatfield);
   ifs << std::setprecision(12);
-  ifs << "ENERGY: " << qm_zone.QM_energy() * energy_to_qm << '\n';
+  ifs << "ENERGY: " << qm_zone.QM_energy() * energy_to_torch << '\n';
 
   // Write QM atoms
   for (std::set<QM_Atom>::iterator
          it = qm_zone.qm.begin(), to = qm_zone.qm.end(); it != to; ++it) {
     // forces = negative gradient (!)
     DEBUG(15, "Writing gradients of QM atom " << it->index);
-    this->write_gradient(-1.0 * it->force * force_to_qm, ifs);
+    this->write_gradient(-1.0 * it->force * force_to_torch, ifs);
     DEBUG(15, "Force: " << math::v2s(it->force));
   }
   // Write capping atoms (index i keeps running...)
   for (std::set<QM_Link>::iterator
          it = qm_zone.link.begin(), to = qm_zone.link.end(); it != to; ++it) {
     DEBUG(15, "Writing gradient of capping atom " << it->qm_index << "-" << it->mm_index);
-    this->write_gradient(-1.0 * it->force * force_to_qm, ifs);
+    this->write_gradient(-1.0 * it->force * force_to_torch, ifs);
     DEBUG(15, "Force: " << math::v2s(it->force));
   }
 }
@@ -563,8 +566,9 @@ void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_output_pc_gradients(std::ofstream& ifs
                                                        , const unsigned int step) {
-  // Gromos -> Hartree / Bohr (Turbomole format)
-  const double force_to_qm = 1.0 / (2625.499639 / 0.05291772109);
+  // Gromos -> Torch unit is inverse of input value from Torch
+  // specification file
+  const double force_to_torch = 1.0 / this->model.unit_factor_force;
 
   // write step size
   this->write_step_size(ifs, step);
@@ -574,11 +578,11 @@ void Torch_QMMM_Interaction<T>::save_output_pc_gradients(std::ofstream& ifs
          it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
     // forces = negative gradient (!)
     DEBUG(15,"Writing gradient of MM atom " << it->index);
-    this->write_gradient(-1.0 * it->force * force_to_qm, ifs);
+    this->write_gradient(-1.0 * it->force * force_to_torch, ifs);
     DEBUG(15, "Force: " << math::v2s(it->force));
     if (it->is_polarisable) {
       DEBUG(15, "Writing gradient of COS of MM atom " << it->index);
-      this->write_gradient(-1.0 * it->cos_force * force_to_qm, ifs);
+      this->write_gradient(-1.0 * it->cos_force * force_to_torch, ifs);
       DEBUG(15, "Force " << math::v2s(it->cos_force));
     }
   }
