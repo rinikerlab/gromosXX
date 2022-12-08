@@ -50,72 +50,87 @@ private:
   /**
    * Prepares the coordinates according to the atom selection scheme selected
    */
-  virtual int prepare_input(const topology::Topology& topo, 
-                            const configuration::Configuration& conf, 
-                            const simulation::Simulation& sim) override;
+  int prepare_input(const topology::Topology& topo, 
+                    const configuration::Configuration& conf, 
+                    const simulation::Simulation& sim) override;
+
+  /**
+   * Gather atoms - wrapper
+  */
+  int gather_atoms(const topology::Topology& topo, 
+                   const configuration::Configuration& conf, 
+                   const simulation::Simulation& sim);
+                      
+  /**
+   * Gather atoms - internal function
+   */
+  template<math::boundary_enum B>
+  int _gather_atoms(const topology::Topology& topo, 
+                    const configuration::Configuration& conf, 
+                    const simulation::Simulation& sim);
 
   /**
    * Initializes tensors ready to go into the model
    */
-  virtual int build_tensors(const simulation::Simulation &sim) override;
+  int build_tensors(const simulation::Simulation &sim) override;
 
   /**
    * Forward pass of the model loaded
    */
-  virtual int forward() override;
+  int forward() override;
 
   /**
    * Backward pass of the model loaded
    */
-  virtual int backward() override;
+  int backward() override;
 
   /**
    * Gets energy from Torch and updates Gromos
    */
-  virtual int update_energy(topology::Topology &topo,
-                            configuration::Configuration &conf,
-                            const simulation::Simulation &sim) override;
+  int update_energy(topology::Topology &topo,
+                    configuration::Configuration &conf,
+                    const simulation::Simulation &sim) override;
 
   /**
    * Gets forces from Torch and updates Gromos
    */
-  virtual int update_forces(topology::Topology &topo,
-                            configuration::Configuration &conf,
-                            const simulation::Simulation &sim) override;
+  int update_forces(topology::Topology &topo,
+                    configuration::Configuration &conf,
+                    const simulation::Simulation &sim) override;
 
   /**
    * Saves Torch input data
    */
-  virtual void save_torch_input(const unsigned int step
-                              , const topology::Topology& topo
-                              , const configuration::Configuration& conf
-                              , const simulation::Simulation& sim) override;
+  void save_torch_input(const unsigned int step
+                      , const topology::Topology& topo
+                      , const configuration::Configuration& conf
+                      , const simulation::Simulation& sim) override;
 
   /**
    * Saves Torch output data
    */
-  virtual void save_torch_output(const unsigned int step
-                               , const topology::Topology& topo
-                               , const configuration::Configuration& conf
-                               , const simulation::Simulation& sim) override;
+  void save_torch_output(const unsigned int step
+                       , const topology::Topology& topo
+                       , const configuration::Configuration& conf
+                       , const simulation::Simulation& sim) override;
   
   /**
    * Saves the coordinates sent to Torch
    */
-  virtual void save_input_coord(std::ofstream& ifs
-                               , const unsigned int step
-                               , const topology::Topology& topo
-                               , const configuration::Configuration& conf
-                               , const simulation::Simulation& sim);
+  void save_input_coord(std::ofstream& ifs
+                      , const unsigned int step
+                      , const topology::Topology& topo
+                      , const configuration::Configuration& conf
+                      , const simulation::Simulation& sim);
 
   /**
    * Saves the energy and gradients from backwards call on Torch model
    */
-  virtual void save_output_gradients(std::ofstream& ifs
-                                   , const unsigned int step
-                                   , const topology::Topology& topo
-                                   , const configuration::Configuration& conf
-                                   , const simulation::Simulation& sim);
+  void save_output_gradients(std::ofstream& ifs
+                           , const unsigned int step
+                           , const topology::Topology& topo
+                           , const configuration::Configuration& conf
+                           , const simulation::Simulation& sim);
 
   /**
    * How many atoms are there in the system

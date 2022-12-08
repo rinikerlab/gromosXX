@@ -11,6 +11,7 @@
 #include <torch/torch.h>
 #include <torchscatter/scatter.h>
 #include <torchsparse/sparse.h>
+#include <torchcluster/cluster.h>
 
 #include "../../stdheader.h"
 #include "../../interaction/interaction.h"

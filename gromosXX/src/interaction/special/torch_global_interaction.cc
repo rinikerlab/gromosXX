@@ -63,7 +63,9 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
     if (err) return err;
   }
 
-  // TODO: is PBC taken care of
+  // TODO: is PBC taken care of (-> gather again), check if it works
+  // TODO: thermostat?
+  // TODO: conversion factors should live in central file
 
   return err;
 }
@@ -73,16 +75,50 @@ int Torch_Global_Interaction<T>::prepare_input(const topology::Topology& topo,
                                                const configuration::Configuration& conf, 
                                                const simulation::Simulation& sim) {
   DEBUG(15, "Preparing input");
+  int err = 0;
+
+  DEBUG(15, "Preparing coordinates for Torch");
+  err = this->gather_atoms(topo, conf, sim);
+
+  return err;
+}
+
+template<typename T>
+int Torch_Global_Interaction<T>::gather_atoms(const topology::Topology& topo, 
+                                              const configuration::Configuration& conf, 
+                                              const simulation::Simulation& sim) {
+  DEBUG(15,"Torch_Global_Interaction::gather_atoms: Splitting boundary");
+  int err = 0;
+  SPLIT_BOUNDARY(err = this->_gather_atoms, topo, conf, sim);
+  return err;
+}
+
+template<typename T>
+template<math::boundary_enum B>
+int Torch_Global_Interaction<T>::_gather_atoms(const topology::Topology& topo, 
+                                               const configuration::Configuration& conf, 
+                                               const simulation::Simulation& sim) {
+  DEBUG(15, "Gathering coordinates for Torch");
+  int err = 0;
   // Gromos -> Torch length unit is inverse of input value from Torch
   // specification file
   const double len_to_torch = 1.0 / this->model.unit_factor_length;
-  int err = 0;
 
-  DEBUG(15, "Transfering coordinates to Torch");
-  for (unsigned idx = 0; idx < natoms; ++idx) {
-    DEBUG(15, idx << " " << topo.qm_atomic_number(idx) << " "
-                        << math::v2s(conf.current().pos(idx) * len_to_torch));
-    math::vector_c2f<T>(positions, conf.current().pos(idx), idx, len_to_torch);
+  math::Periodicity<B> periodicity(conf.current().box);
+  const math::VArray& pos = conf.current().pos;
+
+  DEBUG(15, "First index: " << 0);
+  const math::Vec& ref_pos = pos(0);
+
+  DEBUG(15, "First ref_pos: " << math::v2s(ref_pos));
+  math::Vec nim;
+
+  // Gather all atoms w.r.t. atom #0
+  for (unsigned idx = 0; idx < natoms; idx++) {
+    periodicity.nearest_image(ref_pos, pos(idx), nim);
+    DEBUG(15, "Atom " << idx << "  (" << topo.qm_atomic_number(idx) << ") : "
+                      << math::v2s(math::v2s(ref_pos - nim) * len_to_torch));
+    math::vector_c2f<T>(positions, ref_pos - nim, idx, len_to_torch);
   }
 
   return err;

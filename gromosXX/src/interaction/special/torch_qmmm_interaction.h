@@ -51,127 +51,127 @@ private:
   /**
    * Sets-up a pointer to the QM zone of the simulation
    */
-  virtual int init_qm_zone();
+  int init_qm_zone();
 
   /**
    * Prepares the coordinates according to the atom selection scheme selected
    */
-  virtual int prepare_input(const topology::Topology& topo, 
+  int prepare_input(const topology::Topology& topo, 
                             const configuration::Configuration& conf, 
                             const simulation::Simulation& sim) override;
 
   /**
    * Sets-up the vector with QM atom types
    */
-  virtual int init_qm_atom_numbers();
+   int init_qm_atom_numbers();
 
   /**
    * Sets-up the vector with QM coordinates - will also cast floating point precisions
    */
-  virtual int prepare_qm_atoms();
+  int prepare_qm_atoms();
 
   /**
    * Sets-up the vectors with MM atom types, charges, and coordinates - will
    * also cast floating point precision
    */
-  virtual int prepare_mm_atoms();
+  int prepare_mm_atoms();
 
   /**
    * Initializes tensors ready to go into the model
    */
-  virtual int build_tensors(const simulation::Simulation &sim) override;
+  int build_tensors(const simulation::Simulation &sim) override;
 
   /**
    * Forward pass of the model loaded
    */
-  virtual int forward() override;
+  int forward() override;
 
   /**
    * Backward pass of the model loaded
    */
-  virtual int backward() override;
+  int backward() override;
 
   /**
    * Gets energy from Torch and updates Gromos
    */
-  virtual int update_energy(topology::Topology &topo,
-                            configuration::Configuration &conf,
-                            const simulation::Simulation &sim) override;
+  int update_energy(topology::Topology &topo,
+                    configuration::Configuration &conf,
+                    const simulation::Simulation &sim) override;
 
   /**
    * Gets forces from Torch and updates Gromos
    */
-  virtual int update_forces(topology::Topology &topo,
-                            configuration::Configuration &conf,
-                            const simulation::Simulation &sim) override;
+  int update_forces(topology::Topology &topo,
+                   configuration::Configuration &conf,
+                   const simulation::Simulation &sim) override;
 
   /**
    * Saves Torch input data
    */
-  virtual void save_torch_input(const unsigned int step
-                              , const topology::Topology& topo
-                              , const configuration::Configuration& conf
-                              , const simulation::Simulation& sim) override;
+  void save_torch_input(const unsigned int step
+                      , const topology::Topology& topo
+                      , const configuration::Configuration& conf
+                      , const simulation::Simulation& sim) override;
 
   /**
    * Saves Torch output data
    */
-  virtual void save_torch_output(const unsigned int step
-                               , const topology::Topology& topo
-                               , const configuration::Configuration& conf
-                               , const simulation::Simulation& sim) override;
+  void save_torch_output(const unsigned int step
+                       , const topology::Topology& topo
+                       , const configuration::Configuration& conf
+                       , const simulation::Simulation& sim) override;
   
   /**
    * Saves the QM coordinates sent to Torch
    */
-  virtual void save_input_coord(std::ofstream& ifs
-                              , const unsigned int step);
+  void save_input_coord(std::ofstream& ifs
+                      , const unsigned int step);
 
   /**
    * Saves the MM coordinates and charges sent to Torch
    */
-  virtual void save_input_point_charges(std::ofstream& ifs
-                                      , const unsigned int step
-                                      , const unsigned int ncharges);
+  void save_input_point_charges(std::ofstream& ifs
+                              , const unsigned int step
+                              , const unsigned int ncharges);
 
   /**
    * Saves the energy and gradients from backwards call on Torch model
    */
-  virtual void save_output_gradients(std::ofstream& ifs
-                                   , const unsigned int step);
+  void save_output_gradients(std::ofstream& ifs
+                           , const unsigned int step);
 
   /**
    * Saves the point charge gradients from backwards call on Torch model
    */
-  virtual void save_output_pc_gradients(std::ofstream& ifs
-                                      , const unsigned int step);
+  void save_output_pc_gradients(std::ofstream& ifs
+                              , const unsigned int step);
 
   /**
    * Saves the charges calculated by Torch model (not implemented)
    */
-  virtual void save_output_charges(std::ofstream& ifs
-                                 , const unsigned int step);
+  void save_output_charges(std::ofstream& ifs
+                         , const unsigned int step);
 
   /**
    * Helper function to write a single MM atom to a file
    */
-  virtual void write_mm_atom(std::ofstream& inputfile_stream
-                           , const int atomic_number
-                           , const math::Vec& pos
-                           , const double charge) const;
+  void write_mm_atom(std::ofstream& inputfile_stream
+                   , const int atomic_number
+                   , const math::Vec& pos
+                   , const double charge) const;
 
   /**
    * Helper function to write a single charge to a file (not completely implemented)
    */
-  virtual void write_charge(std::ofstream& inputfile_stream
-                          , const int atomic_number
-                          , const double charge) const;
+  void write_charge(std::ofstream& inputfile_stream
+                  , const int atomic_number
+                  , const double charge) const;
   
   /**
    * Computes the number of charges like in QM_Worker.cc
    * TODO: combine with QM_Worker.cc
    */
-  virtual int get_num_charges(const simulation::Simulation &sim) const;
+  int get_num_charges(const simulation::Simulation &sim) const;
 
   /**
    * A copy of the QM zone, is refreshed every step

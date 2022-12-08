@@ -134,6 +134,9 @@ int Torch_Interaction<T>::calculate_interactions(
     m_timer.stop_subtimer("Writing Torch output");
   }
 
+  // TODO: call other method like interact_with_model and / or destroy_model
+  // idea would be that models can do more than forward and backward but also write to files, ...
+
   m_timer.stop();
 
   return err;
