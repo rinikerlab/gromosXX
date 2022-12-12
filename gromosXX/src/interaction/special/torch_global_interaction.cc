@@ -66,6 +66,7 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
   // TODO: is PBC taken care of (-> gather again), check if it works
   // TODO: thermostat?
   // TODO: conversion factors should live in central file
+  // TODO: check that PBC atoms don't see themselves
 
   return err;
 }
