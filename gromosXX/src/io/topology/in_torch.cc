@@ -108,7 +108,7 @@ void io::In_Torch::read_models(simulation::Simulation &sim) {
     }
     
     // set device
-    switch (device) {
+    switch (device) { // TODO: check ternary condition
       case 0: if (torch::cuda::is_available()) { torch::cuda::is_available() ? model.device = torch::kCUDA : model.device = torch::kCPU; } break;
       case 1: model.device = torch::kCPU; break;
       case 2: model.device = torch::kCUDA; break;

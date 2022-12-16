@@ -114,7 +114,7 @@ int Torch_Global_Interaction<T>::_gather_atoms(const topology::Topology& topo,
   DEBUG(15, "First ref_pos: " << math::v2s(ref_pos));
   math::Vec nim;
 
-  // Gather all atoms w.r.t. atom #0
+  // Gather all atoms w.r.t. atom #0 const math::Vec& ref_pos = pos(0);
   for (unsigned idx = 0; idx < natoms; idx++) {
     periodicity.nearest_image(ref_pos, pos(idx), nim);
     DEBUG(15, "Atom " << idx << "  (" << topo.qm_atomic_number(idx) << ") : "
