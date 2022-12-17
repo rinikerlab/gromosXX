@@ -55,7 +55,6 @@ endif()
 
 if(TORCH)
     # https://pytorch.org/cppdocs/installing.html
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${TORCH})
     find_package(TorchSparse REQUIRED)
     find_package(TorchScatter REQUIRED)
     find_package(TorchCluster REQUIRED)
