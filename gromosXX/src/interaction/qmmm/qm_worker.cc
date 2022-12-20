@@ -383,7 +383,13 @@ int interaction::QM_Worker::get_num_charges(const simulation::Simulation& sim
       break;
     }
     case simulation::qmmm_electrostatic: {
-      num_charges = qm_zone.mm.size();
+      if (sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
+        num_charges = qm_zone.mm.size();
+      }
+      else { // required for delta-ML models that require the gathering algorithm 
+             // from QM/MM interaction but don't do delta-learning on them
+        num_charges = 0;
+      }
       break;
     }
     case simulation::qmmm_polarisable: {

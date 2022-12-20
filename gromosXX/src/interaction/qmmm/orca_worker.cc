@@ -172,7 +172,9 @@ int interaction::Orca_Worker::process_input(const topology::Topology& topo
   err = this->write_input_coordinates(ifs, topo, conf, sim, qm_zone);
   if (err) return err;
 
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  this->ncharges = this->get_num_charges(sim, qm_zone);
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical && 
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     // create external file with information on point charges
     err = this->write_input_pointcharges(ifs, topo, conf, sim, qm_zone);
     if (err) return err;
@@ -248,7 +250,7 @@ int interaction::Orca_Worker::write_input_pointcharges(std::ofstream& ifs
   if (err) return err;
 
   // write number of charges
-  ifs << this->get_num_charges(sim, qm_zone) << '\n';
+  ifs << this->ncharges << '\n';
 
   const double len_to_qm = 1.0 / this->param->unit_factor_length;
   const double cha_to_qm = 1.0 / this->param->unit_factor_charge;
@@ -305,7 +307,7 @@ int interaction::Orca_Worker::run_calculation() {
     std::ostringstream msg;
     msg << "Orca failed with code " << err;
     if (err == 127)
-      msg << ". orca probably not in PATH";
+      msg << ". orca probably not in PATH. If you run MPI parallelized calculations with orca, specify the absolute path to the binary";
     msg << ". See output file " << this->param->output_file << " for details.";
     io::messages.add(msg.str(), this->name(), io::message::error);
     return 1;
@@ -335,7 +337,8 @@ int interaction::Orca_Worker::process_output(topology::Topology& topo
   ofs.clear();
 
   // parse MM gradients or charges
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     // also parse MM gradients
     err = this->open_output(ofs, this->param->output_mm_gradient_file);
     if (err) return err;

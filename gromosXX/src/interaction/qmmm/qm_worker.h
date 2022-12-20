@@ -101,6 +101,11 @@ namespace interaction {
     bool minimisation;
 
     /**
+     * Number of point charges, re-calculated every step
+     */
+    int ncharges;
+
+    /**
      * Handle to the input coordinate trajectory (QM) 
      */
     mutable std::ofstream input_coordinate_stream;

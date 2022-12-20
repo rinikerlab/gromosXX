@@ -95,7 +95,8 @@ int interaction::DFTB_Worker::process_input(const topology::Topology& topo
   }
   ifs.close();
   
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     // write MM atoms
     err = this->open_input(ifs, this->param->input_mm_coordinate_file);
     if (err) return err;
@@ -208,7 +209,8 @@ int interaction::DFTB_Worker::process_output(topology::Topology& topo
   err = this->parse_qm_forces(ofs, qm_zone);
   if (err) return err;
 
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     err = this->parse_mm_forces(ofs, qm_zone);
     if (err) return err;
   }

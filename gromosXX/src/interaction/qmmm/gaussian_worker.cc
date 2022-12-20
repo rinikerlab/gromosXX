@@ -136,7 +136,8 @@ int interaction::Gaussian_Worker::process_input(const topology::Topology& topo
   ifs << std::endl;
   
   // Write MM coordinates and charges
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     for (std::set<MM_Atom>::const_iterator
           it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
       if (it->is_polarisable) {
@@ -369,7 +370,8 @@ int interaction::Gaussian_Worker::parse_forces(const simulation::Simulation& sim
   int err = 0;
   
   // Find MM forces - in the form of electric field
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     bool got_mm_efield = false;
     while (std::getline(ofs, line)) {
       if (line.find("-------- Electric Field --------") != std::string::npos) {
