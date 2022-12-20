@@ -187,12 +187,19 @@ int interaction::XTB_Worker::process_input(const topology::Topology& topo
       return 1;
   }
 
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
-    // process point charges
-    err = this->process_input_pointcharges(topo, conf, sim, qm_zone);
-    if (err) return err;
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical && 
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
+    // check if there are point charges
+    this->ncharges = this->get_num_charges(sim, qm_zone); // this also checks for COS
+                                                          // is 0 for electrostatic embedding
+                                                          // and option "qm_pc_off"
 
+    // process point charges
     if (this->ncharges > 0) { // set external charges only if > 0 ; otherwise xTB crashes
+      err = this->process_input_pointcharges(topo, conf, sim, qm_zone);
+      if (err) return err;
+
+      // give point charges to xtb
       xtb_setExternalCharges(this->env, this->calc, &(this->ncharges), this->numbers.data(),
                              this->charges.data(), this->point_charges.data());
       if (xtb_checkEnvironment(this->env)) {
@@ -242,7 +249,6 @@ int interaction::XTB_Worker::process_input_pointcharges(const topology::Topology
   const double cha_to_qm = 1.0 / this->param->unit_factor_charge;
   const double len_to_qm = 1.0 / this->param->unit_factor_length;
 
-  this->ncharges = this->get_num_charges(sim, qm_zone); // this also checks for COS
   this->numbers.resize(this->ncharges);
   this->charges.resize(this->ncharges);
   this->point_charges.resize(this->ncharges * 3);
@@ -300,7 +306,9 @@ int interaction::XTB_Worker::process_output(topology::Topology& topo
                   , simulation::Simulation& sim
                   , interaction::QM_Zone& qm_zone) {
 
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical && this->ncharges > 0) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical && 
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on && 
+      this->ncharges > 0) {
     // release charges after successful run
     xtb_releaseExternalCharges(this->env, this->calc);
     if (xtb_checkEnvironment(this->env)) {
@@ -318,7 +326,9 @@ int interaction::XTB_Worker::process_output(topology::Topology& topo
   if (err) return err;
 
   // parse MM gradients or charges
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical && this->ncharges > 0) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical && 
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on && 
+      this->ncharges > 0) {
     // also parse MM gradients
     err = this->parse_mm_gradients(qm_zone);
     if (err) return err;

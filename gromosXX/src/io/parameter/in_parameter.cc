@@ -5263,8 +5263,9 @@ void io::In_Parameter::read_QMMM(simulation::Parameter & param,
     // will be used to generate snippets that can be included in the doxygen doc;
     // the first line is the tag
     exampleblock << "QMMM\n";
-    exampleblock << "# NTQMMM -1..3 apply QM/MM\n";
+    exampleblock << "# NTQMMM -2..3 apply QM/MM\n";
     exampleblock << "#    0: do not apply QM/MM\n";
+    exampleblock << "#   -2: apply electrostatic embedding scheme but do not send point charges to QM software\n";
     exampleblock << "#   -1: apply mechanical embedding scheme with constant QM charges\n";
     exampleblock << "#    1: apply mechanical embedding scheme with dynamic QM charges\n";
     exampleblock << "#    2: apply electrostatic embedding scheme\n";
@@ -5310,7 +5311,7 @@ void io::In_Parameter::read_QMMM(simulation::Parameter & param,
         int enable = 0,software = 0,write = 0,qmlj = 0,qmcon = 0;
         double mm_scale = -1.;
         double cutoff = 0.0;
-        block.get_next_parameter("NTQMMM", enable, "", "-1,0,1,2,3");
+        block.get_next_parameter("NTQMMM", enable, "", "-2,-1,0,1,2,3");
         block.get_next_parameter("NTQMSW", software, "", "-1,0,1,2,3,4,5,6,7");
         block.get_next_parameter("RCUTQM", cutoff, "", "");
         block.get_next_parameter("NTWQMMM", write, ">=0", "");
@@ -5326,6 +5327,10 @@ void io::In_Parameter::read_QMMM(simulation::Parameter & param,
             case 0:
                 param.qmmm.qmmm = simulation::qmmm_off;
                 break;
+            case -2:
+                param.qmmm.qmmm = simulation::qmmm_electrostatic;
+                param.qmmm.qm_pc = simulation::qm_pc_off;
+                break;
             case -1:
                 param.qmmm.qmmm = simulation::qmmm_mechanical;
                 param.qmmm.qm_ch = simulation::qm_ch_constant;
@@ -5336,6 +5341,7 @@ void io::In_Parameter::read_QMMM(simulation::Parameter & param,
                 break;
             case 2:
                 param.qmmm.qmmm = simulation::qmmm_electrostatic;
+                param.qmmm.qm_pc = simulation::qm_pc_on;
                 break;
             case 3:
                 param.qmmm.qmmm = simulation::qmmm_polarisable;

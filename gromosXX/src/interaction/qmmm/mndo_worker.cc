@@ -194,8 +194,8 @@ int interaction::MNDO_Worker::process_input(const topology::Topology& topo
   header = io::replace_string(header, "@@NUM_LINKS@@", std::to_string(num_links));
   
   // Get number of MM charges and replace
-  unsigned num_charges = this->get_num_charges(sim, qm_zone);
-  header = io::replace_string(header, "@@NUM_CHARGES@@", std::to_string(num_charges));
+  this->ncharges = this->get_num_charges(sim, qm_zone);
+  header = io::replace_string(header, "@@NUM_CHARGES@@", std::to_string(this->ncharges));
   header = io::replace_string(header, "@@CHARGE@@", std::to_string(qm_zone.charge()));
   header = io::replace_string(header, "@@SPINM@@", std::to_string(qm_zone.spin_mult()));
 
@@ -234,7 +234,8 @@ int interaction::MNDO_Worker::process_input(const topology::Topology& topo
   ifs << std::endl;
   
   // Write MM coordinates and charges
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     for (std::set<MM_Atom>::const_iterator
           it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
       if (it->is_polarisable) {
@@ -566,7 +567,8 @@ int interaction::MNDO_Worker::parse_gradients(const simulation::Simulation& sim
     }
   }
   // Find MM gradients
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     bool got_mm_gradients = false;
     while (std::getline(ofs, line)) {
       if (line.find("CARTESIAN GRADIENT OF MM ATOMS") != std::string::npos) {

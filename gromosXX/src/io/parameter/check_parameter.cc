@@ -285,6 +285,17 @@ int io::simple_crosschecks(simulation::Simulation & sim) {
       io::messages.add("QMMM block: constraints in QM requested, but no solute constraints enabled"
                       , "In_Parameter", io::message::error);
     }
+   // We should enable this feature for other QM workers as well 
+    if (param.qmmm.qm_pc == simulation::qm_pc_off && param.qmmm.software != simulation::qm_xtb) {
+      io::messages.add("QMMM block: electrostatic embedding without passing point charges to QM software only tested with xtb"
+                      , "In_Parameter", io::message::warning);
+    }
+
+    // Torch energy cannot be split atomwise, thus energy groups involving a Torch interaction are incomplete
+    if (param.torch.torch && param.force.energy_group.size() > 1) {
+      io::messages.add("TORCH block: Energy groups will not contain Torch contribution",
+                         "In_Parameter", io::message::warning);
+    }
 
   if (io::messages.contains(io::message::error) ||
       io::messages.contains(io::message::critical))

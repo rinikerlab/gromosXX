@@ -313,8 +313,11 @@ int interaction::MOPAC_Worker::process_input(const topology::Topology& topo
     this->write_qm_atom(ifs, it->atomic_number, it->pos * len_to_qm);
   }
   ifs.close();
+
+
   // Now do mol.in file (only for electrostatic and polarizable embedding)
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     err = this->open_input(ifs, this->param->molin_file);
     if (err) return err;
     // Write empty line
@@ -495,7 +498,10 @@ int interaction::MOPAC_Worker::process_output(topology::Topology& topo
   err = this->parse_qm_gradients(sim, ofs, qm_zone);
   if (err) return err;
 
-  this->calculate_mm_forces(topo, sim, qm_zone);
+  // calculate forces between QM / MM zone (default: on)
+  if (sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
+    this->calculate_mm_forces(topo, sim, qm_zone);
+  }
 
   ofs.close();
   return 0;

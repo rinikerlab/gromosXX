@@ -924,6 +924,22 @@ namespace simulation
   };
 
   /**
+   * @enum qm_pc_enum
+   * gather and include point charges in electrostatic embedding calculations (standard)
+   * or only gather them but don't send them off to QM calculations (e.g. for delta-ML)
+   */
+  enum qm_pc_enum {
+    /**
+     * gather point charges but don't send them off to QM
+     */
+    qm_pc_off = 0,
+    /**
+     * gather point charges and send them off to QM
+     */
+    qm_pc_on = 1
+  };
+
+  /**
    * @enum qm_lj_enum
    * apply LJ between QM atoms
    */
@@ -3931,6 +3947,8 @@ namespace simulation
        * - cap_length 0.109 (capping atom distance)
        * - mm_scale -1.0 (no scaling)
        * - qmmm qmmm_off (no QMMM)
+       * - qm_ch qm_ch_constant (charges from force field)
+       * - qm_pc qm_pc_on (include point charges for electrostatic embedding)
        * - qm_lj qm_lj_off (no LJ dispersion within QM zone)
        * - qm_constraint qm_constr_off (no constraints in QM zone)
        * - software qm_mndo (MNDO)
@@ -3944,6 +3962,7 @@ namespace simulation
                     , mm_scale(-1.0)
                     , qmmm(qmmm_off)
                     , qm_ch(qm_ch_constant)
+                    , qm_pc(qm_pc_on)
                     , qm_constraint(qm_constr_off)
                     , software(qm_mndo)
                     , write(0)
@@ -3975,6 +3994,10 @@ namespace simulation
        * QM-MM embedding scheme or disable
        */
       qm_ch_enum qm_ch;
+      /**
+       * send point charges to QM software in electrostatic embedding or not
+       */
+      qm_pc_enum qm_pc;
       /**
        * apply LJ interaction in QM zone or not
        */

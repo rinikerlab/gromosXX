@@ -77,23 +77,27 @@ int interaction::Turbomole_Worker::process_input(const topology::Topology& topo
   ifs << "$end" << std::endl;
   ifs.close();
 
-  err = this->open_input(ifs, this->param->input_mm_coordinate_file);
-  if (err) return err;
+  // set external potential (MM atoms)
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
+    err = this->open_input(ifs, this->param->input_mm_coordinate_file);
+    if (err) return err;
 
-  ifs << "$point_charges" << std::endl;
-  double cha_to_qm = 1.0 / this->param->unit_factor_charge;
-  for (std::set<MM_Atom>::const_iterator
-        it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
-    if (it->is_polarisable) {
-      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, (it->charge - it->cos_charge) * cha_to_qm);
-      this->write_mm_atom(ifs, it->atomic_number, (it->pos + it->cosV) * len_to_qm, it->cos_charge * cha_to_qm);
+    ifs << "$point_charges" << std::endl;
+    double cha_to_qm = 1.0 / this->param->unit_factor_charge;
+    for (std::set<MM_Atom>::const_iterator
+          it = qm_zone.mm.begin(), to = qm_zone.mm.end(); it != to; ++it) {
+      if (it->is_polarisable) {
+        this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, (it->charge - it->cos_charge) * cha_to_qm);
+        this->write_mm_atom(ifs, it->atomic_number, (it->pos + it->cosV) * len_to_qm, it->cos_charge * cha_to_qm);
+      }
+      else {
+        this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, it->charge * cha_to_qm);
+      }
     }
-    else {
-      this->write_mm_atom(ifs, it->atomic_number, it->pos * len_to_qm, it->charge * cha_to_qm);
-    }
+    ifs << "$end" << std::endl;
+    ifs.close();
   }
-  ifs << "$end" << std::endl;
-  ifs.close();
 
   DEBUG(15, "Initialized " << this->name());
   
@@ -209,7 +213,9 @@ int interaction::Turbomole_Worker::process_output(topology::Topology& topo
   ofs.close();
   ofs.clear();
   
-  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
+  // get point charge gradients
+  if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
     err = this->open_output(ofs, this->param->output_mm_gradient_file);
     if (err) return err;
 
@@ -217,7 +223,9 @@ int interaction::Turbomole_Worker::process_output(topology::Topology& topo
     if (err) return err;
     ofs.close();
     ofs.clear();
-  } else if (sim.param().qmmm.qmmm == simulation::qmmm_mechanical
+  } 
+  // get charges
+  else if (sim.param().qmmm.qmmm == simulation::qmmm_mechanical
               && sim.param().qmmm.qm_ch == simulation::qm_ch_dynamic) {
     err = this->open_output(ofs, this->param->output_charge_file);
     if (err) return err;
