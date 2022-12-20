@@ -5263,9 +5263,9 @@ void io::In_Parameter::read_QMMM(simulation::Parameter & param,
     // will be used to generate snippets that can be included in the doxygen doc;
     // the first line is the tag
     exampleblock << "QMMM\n";
-    exampleblock << "# NTQMMM -1..3 apply QM/MM\n";
+    exampleblock << "# NTQMMM -2..3 apply QM/MM\n";
     exampleblock << "#    0: do not apply QM/MM\n";
-    exampleblock << "#   -2: apply electrostatic embedding scheme but do not send point charges to QM software\n"
+    exampleblock << "#   -2: apply electrostatic embedding scheme but do not send point charges to QM software\n";
     exampleblock << "#   -1: apply mechanical embedding scheme with constant QM charges\n";
     exampleblock << "#    1: apply mechanical embedding scheme with dynamic QM charges\n";
     exampleblock << "#    2: apply electrostatic embedding scheme\n";
