@@ -188,11 +188,14 @@ int interaction::XTB_Worker::process_input(const topology::Topology& topo
   }
 
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) {
-    // process point charges
-    err = this->process_input_pointcharges(topo, conf, sim, qm_zone);
-    if (err) return err;
-
+    // check if there are point charges
+    this->ncharges = 0; // this->get_num_charges(sim, qm_zone); // this also checks for COS
     if (this->ncharges > 0) { // set external charges only if > 0 ; otherwise xTB crashes
+      // process point charges
+      err = this->process_input_pointcharges(topo, conf, sim, qm_zone);
+      if (err) return err;
+
+      // give point charges to xtb
       xtb_setExternalCharges(this->env, this->calc, &(this->ncharges), this->numbers.data(),
                              this->charges.data(), this->point_charges.data());
       if (xtb_checkEnvironment(this->env)) {
@@ -242,7 +245,6 @@ int interaction::XTB_Worker::process_input_pointcharges(const topology::Topology
   const double cha_to_qm = 1.0 / this->param->unit_factor_charge;
   const double len_to_qm = 1.0 / this->param->unit_factor_length;
 
-  this->ncharges = this->get_num_charges(sim, qm_zone); // this also checks for COS
   this->numbers.resize(this->ncharges);
   this->charges.resize(this->ncharges);
   this->point_charges.resize(this->ncharges * 3);
