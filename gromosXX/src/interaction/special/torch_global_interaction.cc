@@ -63,8 +63,6 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
     if (err) return err;
   }
 
-  // TODO: is PBC taken care of (-> gather again), check if it works
-  // TODO: thermostat?
   // TODO: conversion factors should live in central file
   // TODO: check that PBC atoms don't see themselves
 
@@ -101,10 +99,12 @@ int Torch_Global_Interaction<T>::_gather_atoms(const topology::Topology& topo,
                                                const simulation::Simulation& sim) {
   DEBUG(15, "Gathering coordinates for Torch");
   int err = 0;
+
   // Gromos -> Torch length unit is inverse of input value from Torch
   // specification file
   const double len_to_torch = 1.0 / this->model.unit_factor_length;
 
+  // Analogous to QM zone gathering
   math::Periodicity<B> periodicity(conf.current().box);
   const math::VArray& pos = conf.current().pos;
 
@@ -120,6 +120,33 @@ int Torch_Global_Interaction<T>::_gather_atoms(const topology::Topology& topo,
     DEBUG(15, "Atom " << idx << "  (" << topo.qm_atomic_number(idx) << ") : "
                       << math::v2s(math::v2s(ref_pos - nim) * len_to_torch));
     math::vector_c2f<T>(positions, ref_pos - nim, idx, len_to_torch);
+  }
+
+  // Check if any atom sees its periodic image (analogues to QM zone gathering)
+  if (conf.boundary_type != math::vacuum) {
+    DEBUG(15, "Torch global gathering check")
+    for (unsigned i = 0; i < natoms - 1; ++i) {
+      const math::Vec& i_pos = pos(i);
+      DEBUG(15, "Atom " << i << ": " << math::v2s(i_pos))
+      for (unsigned j = i + 1; j < natoms; ++j) {
+        const math::Vec& j_pos = pos(j);
+        math::Vec nim;
+        periodicity.nearest_image(i_pos, j_pos, nim);
+        DEBUG(15, "nim to " << j << " : " << math::v2s(nim));
+        const math::Vec j_pos_2 = i_pos - nim;
+        DEBUG(15, "j_pos:   " << math::v2s(j_pos));
+        DEBUG(15, "j_pos_2: " << math::v2s(j_pos_2));
+        const double delta = math::abs2(j_pos_2 - j_pos);
+        DEBUG(15, "delta:   " << delta);
+        if (delta > math::epsilon) {
+          std::ostringstream msg;
+          msg << "Torch global sees own periodic image (atoms "
+              << (i + 1) << " and " << (j + 1) << ")";
+          io::messages.add(msg.str(), "Torch Global Interaction", io::message::error);
+          err = 1;
+        }
+      }
+    }
   }
 
   return err;

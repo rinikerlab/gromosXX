@@ -83,9 +83,7 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
     }
   }
 
-  // TODO: is PBC taken care of
   // TODO: get_num_of charges from QM_Worker
-  // TODO: add energy go total energy
 
   err = init_qm_zone();
   if (err)
