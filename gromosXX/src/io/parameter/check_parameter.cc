@@ -291,11 +291,13 @@ int io::simple_crosschecks(simulation::Simulation & sim) {
                       , "In_Parameter", io::message::warning);
     }
 
+#ifdef WITH_TORCH
     // Torch energy cannot be split atomwise, thus energy groups involving a Torch interaction are incomplete
     if (param.torch.torch && param.force.energy_group.size() > 1) {
       io::messages.add("TORCH block: Energy groups will not contain Torch contribution",
                          "In_Parameter", io::message::warning);
     }
+#endif
 
   if (io::messages.contains(io::message::error) ||
       io::messages.contains(io::message::critical))
