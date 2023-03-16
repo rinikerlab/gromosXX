@@ -1,13 +1,3 @@
-# use backported find module for Zlib library if version < 3.0
-if(${CMAKE_VERSION} VERSION_LESS "3.0.0")
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/zlib")
-endif()
-
-# use backported find module for GSL library if version < 3.2
-if(${CMAKE_VERSION} VERSION_LESS "3.2.0")
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/modules/gsl")
-endif()
-
 # find always required libraries
 find_package(FFTW REQUIRED)
 find_package(Threads REQUIRED)
@@ -43,14 +33,13 @@ else()
     message(STATUS "Clipper usage disabled.")
 endif()
 
-# TODO: should be implemented with find_package() macro...
 if(XTB)
-    message(STATUS "Taking xtb library from: ${XTB}")
-    set(XTB_LIBRARIES "${XTB}/lib/x86_64-linux-gnu/libxtb.so")
-    set(XTB_INCLUDES "${XTB}/include")
-    add_definitions(-DWITH_XTB)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(XTB REQUIRED IMPORTED_TARGET xtb)
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${XTB_LIBRARIES})
-    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${XTB_INCLUDES})
+    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${XTB_INCLUDE_DIRS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${XTB_CFLAGS_OTHER}")
+    add_definitions(-DXTB)
 endif()
 
 if(TORCH)
@@ -75,13 +64,13 @@ endif()
 
 # find options based libraries
 if(OMP)
-    find_package(FFTWomp REQUIRED)
+    find_package(FFTW_OMP REQUIRED)
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${FFTW_OMP_LIBRARIES})
     set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${FFTW_OMP_INCLUDE_DIRS})
 endif()
 
 if(MPI)
-    find_package(FFTWmpi REQUIRED)
+    find_package(FFTW_MPI REQUIRED)
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${FFTW_MPI_LIBRARIES})
     set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${FFTW_MPI_INCLUDE_DIRS})
 endif()

@@ -18,7 +18,7 @@ set(GROMOS_OBJECTS
     $<TARGET_OBJECTS:grorepex>
 )
 
-if(CUDAKERNEL)
+if(CUKERNEL)
     list(APPEND GROMOS_OBJECTS $<TARGET_OBJECTS:grocukernel>)
 endif()
 
@@ -32,7 +32,7 @@ endif()
 foreach(LOOP_VAR ${EXEC_NAMES})
     add_executable(${LOOP_VAR} "${LOOP_VAR}.cc" ${GROMOS_OBJECTS})
     target_include_directories(${LOOP_VAR} PRIVATE ${PROGRAM_INCLUDES} ${EXTERNAL_INCLUDES})
-    target_link_libraries(${LOOP_VAR} ${EXTERNAL_LIBRARIES})
+    target_link_libraries(${LOOP_VAR} PRIVATE ${EXTERNAL_LIBRARIES})
 endforeach()
 
 # install

@@ -98,7 +98,7 @@ int main(int argc, char *argv[]){
 #ifdef WITH_TORCH
    << "torch"
 #endif
-   << "version" << "develop";
+   << "version" << "develop" << "gamd";
   
   std::string usage;
   util::get_usage(knowns, usage, argv[0]);

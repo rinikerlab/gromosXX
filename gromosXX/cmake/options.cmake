@@ -13,16 +13,30 @@ option(TORCH "enable TORCH" OFF) # -DTORCH={TORCH_ROOT} (may be pre-C++11 or C++
 option(FORCEGROUPS "enable forcegroups" OFF)
 option(HEAVISIDE "enable heaviside" OFF)
 
+# more pedantic compiler checks
+option(PENDANTIC "enable pedantic compiler checks")
+
 set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+
+if(PEDANTIC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Wshadow -Wnon-virtual-dtor -pedantic -Wunused -Wconversion -Wsign-conversion")
+endif()
 
 if(OMP AND MPI)
     message(FATAL_ERROR "OMP and MPI must NOT be enabled at the same time")
 endif()
 
-if(CUDAKERNEL)
+if(CUKERNEL AND NOT OMP)
+    message(FATAL_ERROR "CUDA kernel requires OMP compilation")
+endif()
+
+if(CUKERNEL)
     enable_language(CUDA)
+    set(CMAKE_CUDA_STANDARD 11)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    set(CMAKE_CUDA_RUNTIME_LIBRARY Shared)
 endif()
 
 # find option dependent packages
