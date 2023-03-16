@@ -36,6 +36,9 @@ interaction::XTB_Worker::XTB_Worker() : QM_Worker("XTB Worker"), param(nullptr) 
 
 interaction::XTB_Worker::~XTB_Worker() {
   // release Fortran resources
+  if (this->param->implicit_solvent) {
+    xtb_releaseSolvent(this->env, this->calc);
+  }
   xtb_delMolecule(&mol);
   xtb_delResults(&res);
   xtb_delCalculator(&calc);
@@ -131,6 +134,14 @@ int interaction::XTB_Worker::init(const topology::Topology& topo
   if (xtb_checkEnvironment(this->env)) {
     xtb_showEnvironment(this->env, NULL);
     return 1;
+  }
+  if (this->param->implicit_solvent) {
+    std::cout << "using XTB with implicit solvent: " << this->param->solvent << std::endl;
+    xtb_setSolvent(this->env, this->calc, const_cast<char*>(this->param->solvent.c_str()), NULL, &this->param->temperature, NULL, &this->param->alpb);
+    if (xtb_checkEnvironment(this->env)) {
+      xtb_showEnvironment(this->env, NULL);
+      return 1;
+  }
   }
 
   // bind output to file
