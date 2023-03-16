@@ -51,15 +51,14 @@ if(TORCH)
     # cmake -S . -B build-d55dd79c4bc49ec831e917dc1af5d4decf913823 -DOMP=on -DMPI=off -DXTB=/home/fpultar/bin/xtb -DTORCH=/home/fpultar/dev/repos/libtorch-11-cpu
     # cmake -S . -B build-d55dd79c4bc49ec831e917dc1af5d4decf913823 -DOMP=on -DMPI=off -DXTB=/home/fpultar/bin/xtb -DTORCH=/home/fpultar/dev/repos/libtorch-11-cuda
     # finding packages
-    # find_package(Torch REQUIRED)
     find_package(TorchSparse REQUIRED)
     find_package(TorchScatter REQUIRED)
     find_package(TorchCluster REQUIRED)
-    add_definitions(-DTORCH)
     # find package call
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${TORCH_LIBRARIES} "TorchSparse::TorchSparse" "TorchScatter::TorchScatter" "TorchCluster::TorchCluster")
     set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${TORCH_INCLUDE_DIRS})
+    add_definitions(-DTORCH)
 endif()
 
 # find options based libraries
