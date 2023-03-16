@@ -4402,6 +4402,22 @@ namespace simulation
          * output file containing xtb logging
          */
         std::string output_log_file;
+        /**
+         * flag to switch on implicit solvent
+         */
+        bool implicit_solvent;
+        /**
+         * name of an implicit solvent
+         */
+        std::string solvent;
+        /**
+         * temperature of the xtb zone (for e.g. implicit solvent)
+         */
+        double temperature = 298.15;
+        /**
+         * use the ALPB solvent model (alternative GBSA)
+         */
+        bool alpb = true;
       } xtb; 
 
       /**

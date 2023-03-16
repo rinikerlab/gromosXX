@@ -525,8 +525,8 @@ END
 XTBOPTIONS
 # GFNHAM    XVERBO
        1         1
-# XTBITE    XTBACC
-     100       0.1
+# XTBITE    XTBACC   # XTBIPL    XTBSLV    XTBTMP    XTBALP
+     100       0.1          1     water    298.15         1
 END
  @endverbatim
  * XTBFILES is an optional block that accepts a file path
@@ -1114,8 +1114,9 @@ void io::In_QMMM::read(topology::Topology& topo,
                 "In_QMMM", io::message::error);
       }
       else {
-        unsigned int hamiltonian, verbosity, maxIter;
-        double accuracy;
+        unsigned int hamiltonian, verbosity, maxIter, implicit_solvent, alpb;
+        double accuracy, temperature;
+        std::string solvent;
         std::string line(buffer[1]);
         _lineStream.clear();
         _lineStream.str(line);
@@ -1136,6 +1137,7 @@ void io::In_QMMM::read(topology::Topology& topo,
           line = buffer[2];
           _lineStream.clear();
           _lineStream.str(line);
+          
           // maxIter
           _lineStream >> maxIter;
           if(_lineStream.fail()) {
@@ -1146,6 +1148,7 @@ void io::In_QMMM::read(topology::Topology& topo,
           sim.param().qmmm.xtb.maxIter = maxIter;
           DEBUG(1, "sim.param().qmmm.xtb.maxIter:");
           DEBUG(1, sim.param().qmmm.xtb.maxIter);
+          
           // accuracy
           _lineStream >> accuracy;
           if (_lineStream.fail()) {
@@ -1156,6 +1159,60 @@ void io::In_QMMM::read(topology::Topology& topo,
           sim.param().qmmm.xtb.accuracy = accuracy;
           DEBUG(1, "sim.param().qmmm.xtb.accuracy:");
           DEBUG(1, sim.param().qmmm.xtb.accuracy);
+          
+          // implicit solvent
+          _lineStream >> implicit_solvent;
+          if (_lineStream.fail()) {
+            io::messages.add("reading in implicit_solvent parameter.",
+                              "In_QMMM", io::message::error);
+              return;
+          }
+          if (implicit_solvent) {
+            sim.param().qmmm.xtb.implicit_solvent = true;
+          } 
+          else {
+            sim.param().qmmm.xtb.implicit_solvent = false;
+          }
+          DEBUG(1, "sim.param().qmmm.xtb.implicit_solvent:");
+          DEBUG(1, sim.param().qmmm.xtb.implicit_solvent);
+          
+          // solvent
+          _lineStream >> solvent;
+          if (_lineStream.fail()) {
+            io::messages.add("reading in solvent parameter.",
+                              "In_QMMM", io::message::error);
+              return;
+          }
+          sim.param().qmmm.xtb.solvent = solvent;
+          DEBUG(1, "sim.param().qmmm.xtb.solvent:");
+          DEBUG(1, sim.param().qmmm.xtb.solvent);
+          
+          // temperature
+          _lineStream >> temperature;
+          if (_lineStream.fail()) {
+            io::messages.add("reading in temperature parameter.",
+                              "In_QMMM", io::message::error);
+              return;
+          }
+          sim.param().qmmm.xtb.temperature = temperature;
+          DEBUG(1, "sim.param().qmmm.xtb.temperature:");
+          DEBUG(1, sim.param().qmmm.xtb.temperature);
+          
+          // ALPB solvent model
+          _lineStream >> alpb;
+          if (_lineStream.fail()) {
+            io::messages.add("reading in alpb parameter.",
+                              "In_QMMM", io::message::error);
+              return;
+          }
+          if (alpb) {
+            sim.param().qmmm.xtb.alpb = true;
+          } 
+          else {
+            sim.param().qmmm.xtb.alpb = false;
+          }
+          DEBUG(1, "sim.param().qmmm.xtb.alpb:");
+          DEBUG(1, sim.param().qmmm.xtb.alpb);
         }
       }
     } // XTBOPTIONS

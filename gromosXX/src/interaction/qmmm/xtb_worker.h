@@ -218,6 +218,11 @@ namespace interaction {
     int ncharges;
 
     /**
+     * The (implicit) solvent if used
+     */
+    char* solvent;
+
+    /**
      * These correspond to element types - required for XTB
      * calculations to match internally hard-coded hardness
      * parameters: https://xtb-docs.readthedocs.io/en/latest/pcem.html and
