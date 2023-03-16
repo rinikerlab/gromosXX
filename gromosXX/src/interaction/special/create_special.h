@@ -14,7 +14,7 @@ namespace interaction
 		     std::ostream & os = std::cout,
 		     bool quiet = false);
 
-#ifdef WITH_TORCH
+#ifdef TORCH
 /**
  * Add a new Torch model to the Force Field, templated to take in precision
  */

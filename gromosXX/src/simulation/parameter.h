@@ -10,7 +10,7 @@
 #ifndef INCLUDED_PARAMETER_H
 #define INCLUDED_PARAMETER_H
 
-#ifdef WITH_TORCH
+#ifdef TORCH
 #include <torch/torch.h>
 #endif
 
@@ -125,7 +125,7 @@ namespace simulation
      */
     dfunct_cycloaddition
   };
-#ifdef WITH_TORCH
+#ifdef TORCH
   /**
    * @enum torch_enum
    * do TORCH, or not
@@ -4691,7 +4691,7 @@ namespace simulation
        */
       double force;
     } dfunct;
-#ifdef WITH_TORCH
+#ifdef TORCH
     struct torch_struct {
 
       torch_struct() : torch (torch_off) {}

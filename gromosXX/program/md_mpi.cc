@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
      << "angrest" << "dihrest" << "jval" << "xray" << "sym"
      << "order"  << "rdc" << "lud" << "led" << "anatrj"
      << "print" << "friction" << "qmmm" 
-#ifdef WITH_TORCH
+#ifdef TORCH
    << "torch"
 #endif
     << "version" << "develop";

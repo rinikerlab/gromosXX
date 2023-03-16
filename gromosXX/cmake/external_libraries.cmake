@@ -55,7 +55,7 @@ if(TORCH)
     find_package(TorchSparse REQUIRED)
     find_package(TorchScatter REQUIRED)
     find_package(TorchCluster REQUIRED)
-    add_definitions(-DWITH_TORCH)
+    add_definitions(-DTORCH)
     # find package call
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${TORCH_LIBRARIES} "TorchSparse::TorchSparse" "TorchScatter::TorchScatter" "TorchCluster::TorchCluster")

@@ -32,7 +32,7 @@
 #include <omp.h>
 #endif
 
-#ifdef WITH_TORCH
+#ifdef TORCH
 #include <torch/torch.h>
 #endif
 
@@ -115,7 +115,7 @@ void io::In_Parameter::read(simulation::Parameter &param,
   read_SYMRES(param);
   read_AMBER(param);
   read_DFUNCT(param);
-#ifdef WITH_TORCH
+#ifdef TORCH
   read_TORCH(param);
 #endif
 
@@ -5937,7 +5937,7 @@ void io::In_Parameter::read_DFUNCT(simulation::Parameter & param, std::ostream &
     } // if block
 } // DFUNCT
 
-#ifdef WITH_TORCH
+#ifdef TORCH
 /**
  * @section torch TORCH block
  * @snippet snippets/snippets.cc TORCH

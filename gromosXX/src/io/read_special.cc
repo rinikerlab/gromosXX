@@ -32,7 +32,7 @@
 #include "../io/topology/in_leus.h"
 #include "../io/topology/in_bsleus.h"
 #include "../io/topology/in_qmmm.h"
-#ifdef WITH_TORCH
+#ifdef TORCH
 #include "../io/topology/in_torch.h"
 #endif
 #include "../io/topology/in_order.h"
@@ -416,7 +416,7 @@ int io::read_special(io::Argument const & args,
     }
   }
 
-#ifdef WITH_TORCH
+#ifdef TORCH
   // Torch
   if (sim.param().torch.torch == simulation::torch_on) {
     io::igzstream torch_file;

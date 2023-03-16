@@ -41,7 +41,7 @@
 #include "../../interaction/bonded/dihedral_new_interaction.h"
 #include "../../interaction/special/pscale.h"
 
-#ifdef WITH_TORCH
+#ifdef TORCH
 #include "../../interaction/special/torch_interaction.h"
 #include "../../interaction/special/torch_global_interaction.h"
 #include "../../interaction/special/torch_qmmm_interaction.h"
@@ -70,7 +70,7 @@ int interaction::create_special(interaction::Forcefield & ff,
   }
 
   // Torch
-#ifdef WITH_TORCH
+#ifdef TORCH
   if (param.torch.torch == simulation::torch_on) {
     if (!quiet) {
       os << "\tTORCH\n";
