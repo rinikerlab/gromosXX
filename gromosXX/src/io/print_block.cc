@@ -466,11 +466,10 @@ namespace io
     os << type << "El (lattice sum self): " << std::setw(48) << e.ls_self_total << "\n";
     os << type << "El (surface term)    : " << std::setw(48) << e.ls_surface_total << "\n";
     os << type << "Polarisation self    : " << std::setw(39) << e.self_total << "\n";
-    os << type << "QM                   : " << std::setw(30) << e.qm_total << "\n";
-    os << type << "Torch                : " << std::setw(30) << e.torch_total << "\n";
     os << type << "Special              : " << std::setw(21) << e.special_total << "\n";
     os << type << "total_orig           : " << std::setw(30) << e.total + e.shift_extra_orig_total << "\n";
     os << type << "total_phys           : " << std::setw(30) << e.total + e.shift_extra_phys_total << "\n";
+    os << type << "QM                   : " << std::setw(30) << e.qm_total << "\n";
     os << type << "SASA                 : " << std::setw(30) << e.sasa_total << "\n";
     os << type << "SASA Volume          : " << std::setw(30) << e.sasa_volume_total << "\n";
     os << type << "Constraints          : " << std::setw(30) << e.constraints_total << "\n";
@@ -489,6 +488,7 @@ namespace io
     os << type << "GAMD total           : " << std::setw(30) << e.gamd_DV_total << "\n";
     os << type << "Entropy              : " << std::setw(30) << e.entropy_term << "\n";
     os << type << "NN validation        : " << std::setw(30) << e.nn_valid << "\n";
+    os << type << "Torch                : " << std::setw(30) << e.torch_total << "\n";
     os << "\n";
 
     os << std::setw(20) << "COV";

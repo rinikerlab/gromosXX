@@ -556,13 +556,13 @@ int configuration::Energy::calculate_totals()
           ls_a_term_total;
   bonded_total = bond_total + angle_total + dihedral_total + improper_total
                  + crossdihedral_total;
-  potential_total = nonbonded_total + bonded_total + qm_total + torch_total;
+  potential_total = nonbonded_total + bonded_total;
   
   special_total = posrest_total + distanceres_total + disfieldres_total
     + angrest_total + dihrest_total
     + constraints_total + jvalue_total + xray_total
     + eds_vr + leus_total + sasa_total + sasa_volume_total + oparam_total
-    + symrest_total + bsleus_total + qm_total + rdc_total + gamd_DV_total;
+    + symrest_total + bsleus_total + qm_total + torch_total + rdc_total + gamd_DV_total;
   
   total = potential_total + kinetic_total + special_total;
 
