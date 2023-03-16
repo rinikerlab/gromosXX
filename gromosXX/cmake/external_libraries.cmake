@@ -57,7 +57,7 @@ if(TORCH)
     # find package call
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
     set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} ${TORCH_LIBRARIES} "TorchSparse::TorchSparse" "TorchScatter::TorchScatter" "TorchCluster::TorchCluster")
-    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${TORCH_INCLUDE_DIRS})
+    set(EXTERNAL_INCLUDES ${EXTERNAL_INCLUDES} ${TORCH_INCLUDE_DIRS} ${TorchSparse_INCLUDE_DIR} ${TorchScatter_INCLUDE_DIR} ${TorchCluster_INCLUDE_DIR})
     add_definitions(-DTORCH)
 endif()
 
