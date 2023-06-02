@@ -315,6 +315,7 @@ int Torch_QMMM_Interaction<T>::update_energy(topology::Topology &topo,
   double energy = static_cast<double>(energy_tensor.item<T>()) *
                   this->model.unit_factor_energy;
   DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol");
+  // TODO: is this really necessary or does it screw up the QM trajectory?
   qm_zone.QM_energy() = energy; // temporary storage for trajectory write-out
   conf.current().energies.torch_total = energy;
   // TODO: split energies depending on which model it is and print
