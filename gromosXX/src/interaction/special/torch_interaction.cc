@@ -67,7 +67,7 @@ int Torch_Interaction<T>::load_model() {
     module = torch::jit::load(model.filename, model.device);
   } catch (const c10::Error &e) {
     io::messages.add("Unable to load / deserialize Torch model: " +
-                         model.filename,
+                         model.filename + "\n" + e.what() + "\n",
                      io::message::error);
     err = 1;
     return err;
