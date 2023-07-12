@@ -14,6 +14,8 @@
 #include "../../../util/timing.h"
 #include "../../../util/system_call.h"
 
+#include "../../../io/blockinput.h"
+
 #include "qm_atom.h"
 #include "mm_atom.h"
 #include "qm_link.h"
@@ -49,14 +51,10 @@ int interaction::DFTB_Worker::init(const topology::Topology& topo
   this->param->input_file = "dftb_in.hsd";
   this->param->output_file = "results.tag";
 
-  // Change to working directory and create the input file
-  if (this->chdir(this->param->working_directory) != 0) return 1;
-  std::ofstream ifs;
-  err = this->open_input(ifs, this->param->input_file);
-  if (err) return err;
-  ifs << this->param->input_header;
-  // Change back to GromosXX directory
-  if (this->chdir(this->cwd) != 0) return 1;
+  // Replace variables in header
+  this->param->input_header = io::replace_string(this->param->input_header, "@@CHARGE@@", std::to_string(qm_zone.charge())); 
+  this->param->input_header = io::replace_string(this->param->input_header, "@@COORDINATES@@", this->param->input_coordinate_file);
+  this->param->input_header = io::replace_string(this->param->input_header, "@@POINTCHARGES@@", this->param->input_mm_coordinate_file);
 
   DEBUG(15, "Initialized " << this->name());
 
@@ -67,9 +65,19 @@ int interaction::DFTB_Worker::process_input(const topology::Topology& topo
                                         , const configuration::Configuration& conf
                                         , const simulation::Simulation& sim
                                         , const interaction::QM_Zone& qm_zone) {
+  // Change to working directory and create the input file
   if (this->chdir(this->param->working_directory) != 0) return 1;
   std::ofstream ifs;
-  int err = this->open_input(ifs, this->param->input_coordinate_file);
+  int err = this->open_input(ifs, this->param->input_file);
+  if (err) return err;
+
+  // Replace variables in header
+  std::string header = io::replace_string(this->param->input_header, "@@NUM_CHARGES@@", std::to_string(this->get_num_charges(sim, qm_zone))); 
+  ifs << header;
+  ifs.close();
+
+  // Write QM coordinate file
+  err = this->open_input(ifs, this->param->input_coordinate_file);
   if (err) return err;
 
   unsigned qm_size = qm_zone.qm.size() + qm_zone.link.size();
