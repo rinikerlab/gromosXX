@@ -208,6 +208,7 @@ int Torch_Global_Interaction<T>::update_forces(topology::Topology &topo,
     DEBUG(15, "Parsing gradients of atom " << i);
     math::Vec force;
     // forces = negative gradient (!)
+    // TODO: before batching is introduced, batch_size - 1 should be less general
     force(0) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
     force(1) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][1].item<T>()) *
