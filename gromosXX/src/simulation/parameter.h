@@ -4541,7 +4541,7 @@ namespace simulation
         /**
          * flag to switch on implicit solvent
          */
-        bool implicit_solvent;
+        bool implicit_solvent = false;
         /**
          * name of an implicit solvent
          */
