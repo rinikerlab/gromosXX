@@ -439,6 +439,23 @@ int interaction::QMMM_Interaction::init(topology::Topology& topo,
     os << "\tunits conversion factors: ";
     m_worker->print_unit_factors(os);
     os << std::endl;
+#ifdef XTB
+    if (sim.param().qmmm.software == simulation::qm_xtb) {
+      if (sim.param().qmmm.xtb.implicit_solvent) {
+        os << "\timplicit solvent model selected for xtb (" << sim.param().qmmm.xtb.solvent << ", ";
+        if (sim.param().qmmm.xtb.alpb) {
+          os << "ALPB)";
+        }
+        else {
+          os << "GBSA)";
+        }
+      }
+      else {
+        os << "\tno implicit solvent model selected for xtb";
+      }
+      os << std::endl;
+    }
+#endif
     if (sim.param().qmmm.qmmm == simulation::qmmm_mechanical) {
       os << "\tQM-MM interactions will be treated classically" << std::endl
          << "\tusing standard cutoffs (RCUTP, RCUTL)" << std::endl

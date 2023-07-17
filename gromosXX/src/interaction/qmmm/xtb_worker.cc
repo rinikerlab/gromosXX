@@ -136,7 +136,6 @@ int interaction::XTB_Worker::init(const topology::Topology& topo
     return 1;
   }
   if (this->param->implicit_solvent) {
-    std::cout << "using XTB with implicit solvent: " << this->param->solvent << std::endl;
     xtb_setSolvent(this->env, this->calc, const_cast<char*>(this->param->solvent.c_str()), NULL, &this->param->temperature, NULL, &this->param->alpb);
     if (xtb_checkEnvironment(this->env)) {
       xtb_showEnvironment(this->env, NULL);
