@@ -47,6 +47,11 @@ namespace interaction {
     std::string cwd;
 
     /**
+     * Number of point charges
+     */
+    int ncharges;
+
+    /**
      * Pointer to simulation parameters
      */
     simulation::Parameter::qmmm_struct::dftb_param_struct* param;

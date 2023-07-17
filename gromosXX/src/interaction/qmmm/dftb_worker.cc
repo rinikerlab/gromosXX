@@ -68,11 +68,17 @@ int interaction::DFTB_Worker::process_input(const topology::Topology& topo
   // Change to working directory and create the input file
   if (this->chdir(this->param->working_directory) != 0) return 1;
   std::ofstream ifs;
+
   int err = this->open_input(ifs, this->param->input_file);
   if (err) return err;
+  this->ncharges = this->get_num_charges(sim, qm_zone);
+
+  std::string header = this->param->input_header;
 
   // Replace variables in header
-  std::string header = io::replace_string(this->param->input_header, "@@NUM_CHARGES@@", std::to_string(this->get_num_charges(sim, qm_zone))); 
+  if (this->ncharges > 0) {
+    header = io::replace_string(header, "@@NUM_CHARGES@@", std::to_string(this->ncharges)); 
+  }
   ifs << header;
   ifs.close();
 
@@ -104,7 +110,7 @@ int interaction::DFTB_Worker::process_input(const topology::Topology& topo
   ifs.close();
   
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
-      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on && this->ncharges > 0) { // only process point charges if there are any
     // write MM atoms
     err = this->open_input(ifs, this->param->input_mm_coordinate_file);
     if (err) return err;
@@ -218,7 +224,7 @@ int interaction::DFTB_Worker::process_output(topology::Topology& topo
   if (err) return err;
 
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical &&
-      sim.param().qmmm.qm_pc == simulation::qm_pc_on) {
+      sim.param().qmmm.qm_pc == simulation::qm_pc_on && this->ncharges > 0) { // only process point charges if there are any
     err = this->parse_mm_forces(ofs, qm_zone);
     if (err) return err;
   }
