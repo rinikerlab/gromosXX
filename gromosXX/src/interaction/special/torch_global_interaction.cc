@@ -294,6 +294,7 @@ void Torch_Global_Interaction<T>::save_output_gradients(std::ofstream& ifs
   for (unsigned idx = 0; idx < natoms; ++idx) {
     math::Vec force;
     // forces = negative gradient (!)
+    assert(batch_size == 1);
     force(0) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
     force(1) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][1].item<T>()) *
