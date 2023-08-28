@@ -95,7 +95,7 @@ int Torch_Interaction<T>::calculate_interactions(
 	  ((sim.steps()) % (model.write) == 0)) {
     m_timer.start_subtimer("Writing Torch input");
     // steps reported in output are steps finished already
-    save_torch_input(sim.steps(), topo, conf, sim);
+    save_torch_input(topo, conf, sim);
     m_timer.stop_subtimer("Writing Torch input");
   }
 
@@ -144,7 +144,7 @@ int Torch_Interaction<T>::calculate_interactions(
 
 template <typename T>
 void Torch_Interaction<T>::write_step_size(std::ofstream& ifs, 
-                                           const unsigned int step) const {
+                                           unsigned int step) const {
   ifs << "TIMESTEP" << '\n';
   ifs << "    " << step << '\n';
   ifs << "END" << '\n';

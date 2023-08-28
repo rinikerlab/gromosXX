@@ -63,9 +63,6 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
     if (err) return err;
   }
 
-  // TODO: conversion factors should live in central file
-  // TODO: check that PBC atoms don't see themselves
-
   return err;
 }
 
@@ -156,7 +153,7 @@ template <typename T>
 int Torch_Global_Interaction<T>::build_tensors(const simulation::Simulation &sim) {
   DEBUG(15, "Building tensors");
   int err = 0;
-  // batch size is 1
+  assert(batch_size == 1); // code needs changes for batch_size > 1
   positions_tensor = torch::from_blob(positions.data(), {batch_size, natoms, dimensions},
                        this->tensor_float_gradient);
   return err;
@@ -209,6 +206,7 @@ int Torch_Global_Interaction<T>::update_forces(topology::Topology &topo,
     math::Vec force;
     // forces = negative gradient (!)
     // TODO: before batching is introduced, batch_size - 1 should be less general
+    assert(batch_size == 1);
     force(0) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
     force(1) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][1].item<T>()) *
@@ -235,24 +233,21 @@ int Torch_Global_Interaction<T>::update_forces(topology::Topology &topo,
 }
 
 template <typename T>
-void Torch_Global_Interaction<T>::save_torch_input(const unsigned int step
-                                                 , const topology::Topology& topo
+void Torch_Global_Interaction<T>::save_torch_input(const topology::Topology& topo
                                                  , const configuration::Configuration& conf
                                                  , const simulation::Simulation& sim) {
-  save_input_coord(input_coordinate_stream, step, topo, conf, sim);
+  save_input_coord(input_coordinate_stream, topo, conf, sim);
 }
 
 template <typename T>
-void Torch_Global_Interaction<T>::save_torch_output(const unsigned int step
-                                                  , const topology::Topology& topo
+void Torch_Global_Interaction<T>::save_torch_output(const topology::Topology& topo
                                                   , const configuration::Configuration& conf
                                                   , const simulation::Simulation& sim) {
-  save_output_gradients(output_gradient_stream, step, topo, conf, sim);
+  save_output_gradients(output_gradient_stream, topo, conf, sim);
 }
 
 template <typename T>
 void Torch_Global_Interaction<T>::save_input_coord(std::ofstream& ifs
-                                                 , const unsigned int step
                                                  , const topology::Topology& topo
                                                  , const configuration::Configuration& conf
                                                  , const simulation::Simulation& sim) {
@@ -276,7 +271,6 @@ void Torch_Global_Interaction<T>::save_input_coord(std::ofstream& ifs
 
 template <typename T>
 void Torch_Global_Interaction<T>::save_output_gradients(std::ofstream& ifs
-                                                      , const unsigned int step
                                                       , const topology::Topology& topo
                                                       , const configuration::Configuration& conf
                                                       , const simulation::Simulation& sim) {

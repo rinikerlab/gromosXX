@@ -115,16 +115,14 @@ protected:
   /**
    * Saves Torch input data
    */
-  virtual void save_torch_input(const unsigned int step
-                              , const topology::Topology& topo
+  virtual void save_torch_input(const topology::Topology& topo
                               , const configuration::Configuration& conf
                               , const simulation::Simulation& sim) = 0;
 
   /**
    * Saves Torch output data
    */
-  virtual void save_torch_output(const unsigned int step
-                               , const topology::Topology& topo
+  virtual void save_torch_output(const topology::Topology& topo
                                , const configuration::Configuration& conf
                                , const simulation::Simulation& sim) = 0;
   

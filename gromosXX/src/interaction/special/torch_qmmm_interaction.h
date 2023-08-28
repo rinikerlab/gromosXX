@@ -36,11 +36,6 @@ public:
       : Torch_Interaction<T>(model, "Torch QM/MM Interface") {}
 
   /**
-   * Deallocates resources
-   */
-  virtual ~Torch_QMMM_Interaction() = default;
-
-  /**
    * Initializes everything necessary
    */
   virtual int init(topology::Topology &topo, configuration::Configuration &conf,
@@ -108,49 +103,57 @@ private:
   /**
    * Saves Torch input data
    */
-  void save_torch_input(const unsigned int step
-                      , const topology::Topology& topo
+  void save_torch_input(const topology::Topology& topo
                       , const configuration::Configuration& conf
                       , const simulation::Simulation& sim) override;
 
   /**
    * Saves Torch output data
    */
-  void save_torch_output(const unsigned int step
-                       , const topology::Topology& topo
+  void save_torch_output(const topology::Topology& topo
                        , const configuration::Configuration& conf
                        , const simulation::Simulation& sim) override;
   
   /**
-   * Saves the QM coordinates sent to Torch
+   * Saves the coordinates sent to Torch
    */
   void save_input_coord(std::ofstream& ifs
-                      , const unsigned int step);
+                      , const topology::Topology& topo
+                      , const configuration::Configuration& conf
+                      , const simulation::Simulation& sim);
 
   /**
-   * Saves the MM coordinates and charges sent to Torch
+   * Saves the point charge coordinates sent to Torch
    */
   void save_input_point_charges(std::ofstream& ifs
-                              , const unsigned int step
-                              , const unsigned int ncharges);
+                      , const topology::Topology& topo
+                      , const configuration::Configuration& conf
+                      , const simulation::Simulation& sim);
 
   /**
    * Saves the energy and gradients from backwards call on Torch model
    */
   void save_output_gradients(std::ofstream& ifs
-                           , const unsigned int step);
+                           , const topology::Topology& topo
+                           , const configuration::Configuration& conf
+                           , const simulation::Simulation& sim);
 
   /**
-   * Saves the point charge gradients from backwards call on Torch model
+   * Saves the gradients on point charges from backwards call on Torch model
    */
   void save_output_pc_gradients(std::ofstream& ifs
-                              , const unsigned int step);
+                           , const topology::Topology& topo
+                           , const configuration::Configuration& conf
+                           , const simulation::Simulation& sim);
+
 
   /**
    * Saves the charges calculated by Torch model (not implemented)
    */
   void save_output_charges(std::ofstream& ifs
-                         , const unsigned int step);
+                           , const topology::Topology& topo
+                           , const configuration::Configuration& conf
+                           , const simulation::Simulation& sim);
 
   /**
    * Helper function to write a single MM atom to a file
@@ -174,14 +177,14 @@ private:
   int get_num_charges(const simulation::Simulation &sim) const;
 
   /**
-   * A copy of the QM zone, is refreshed every step
+   * A copy of the QM zone, is refreshed every step, unlikely to be performance critical
   */
   QM_Zone qm_zone;
 
   /**
    * A (non_owning) pointer to the QMMM interaction
    */
-  QMMM_Interaction *qmmm_ptr;
+  QMMM_Interaction const *qmmm_ptr;
 
   /**
    * The size of the QM zone (QM atoms + QM link atoms)
@@ -194,14 +197,14 @@ private:
   int ncharges;
 
   /**
-   * How many batches are sent to Torch each iteration
+   * How many batches are sent to Torch each iteration; update for future EDS / RE-EDS implementations, ...
   */
-  unsigned batch_size;
+  const unsigned batch_size = 1;
 
   /**
    * How many Cartesian coordinates
   */
-  unsigned dimensions;
+  const unsigned dimensions = 3;
 
   /**
    * Handle to the input coordinate trajectory (Torch/QM) 

@@ -48,12 +48,7 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
                                  bool quiet) {
   DEBUG(15, "Initializing Torch QM/MM Interaction");
   int err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
-  if (err)
-    return err;
-
-  // one batch per iteration
-  batch_size = 1;
-  dimensions = 3;
+  if (err) return err;
 
   // open trajectory streams
   if (this->model.write > 0) {
@@ -83,15 +78,13 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
     }
   }
 
-  // TODO: get_num_of charges from QM_Worker
+  // TODO: get_num_of charges directly from QM_Worker (see below)
 
   err = init_qm_zone();
-  if (err)
-    return err;
+  if (err) return err;
 
   err = init_qm_atom_numbers();
-  if (err)
-    return err;
+  if (err) return err;
 
   return err;
 }
@@ -154,22 +147,20 @@ int Torch_QMMM_Interaction<T>::prepare_input(const topology::Topology& topo,
                                              const configuration::Configuration& conf, 
                                              const simulation::Simulation& sim) {
   DEBUG(15, "Preparing input");
+
   // get a new copy of the QM zone
   qm_zone = *(qmmm_ptr->qm_zone());
 
   // get size of QM zone and MM zone
-  assert(static_cast<int>(qm_zone.qm.size() + qm_zone.link.size()) ==
-         natoms);
+  assert(static_cast<int>(qm_zone.qm.size() + qm_zone.link.size()) == natoms);
   ncharges = get_num_charges(sim);
 
   // put coordinates into one-dimensional vectors
   int err = prepare_qm_atoms();
-  if (err)
-    return err;
+  if (err) return err;
 
   err = prepare_mm_atoms();
-  if (err)
-    return err;
+  if (err) return err;
 
   return err;
 }
@@ -263,7 +254,7 @@ template <typename T>
 int Torch_QMMM_Interaction<T>::build_tensors(const simulation::Simulation &sim) {
   DEBUG(15, "Building tensors");
   int err = 0;
-  // batch size is 1
+  assert(batch_size == 1); // code needs to change to support batch_size > 1
   qm_atomic_numbers_tensor = torch::from_blob(
       qm_atomic_numbers.data(), {batch_size, natoms}, this->tensor_int64);
   qm_positions_tensor =
@@ -315,10 +306,8 @@ int Torch_QMMM_Interaction<T>::update_energy(topology::Topology &topo,
   double energy = static_cast<double>(energy_tensor.item<T>()) *
                   this->model.unit_factor_energy;
   DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol");
-  // TODO: is this really necessary or does it screw up the QM trajectory?
-  qm_zone.QM_energy() = energy; // temporary storage for trajectory write-out
-  conf.current().energies.torch_total = energy;
   // TODO: split energies depending on which model it is and print
+  conf.current().energies.torch_total = energy;
   return 0;
 }
 
@@ -446,24 +435,22 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
 }
 
 template <typename T>
-void Torch_QMMM_Interaction<T>::save_torch_input(const unsigned int step
-                                               , const topology::Topology& topo
+void Torch_QMMM_Interaction<T>::save_torch_input(const topology::Topology& topo
                                                , const configuration::Configuration& conf
                                                , const simulation::Simulation& sim) {
-  save_input_coord(input_coordinate_stream, step);
+  save_input_coord(input_coordinate_stream, topo, conf, sim);
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
-    save_input_point_charges(input_point_charge_stream, step, get_num_charges(sim));
+    save_input_point_charges(input_point_charge_stream, topo, conf, sim);
   }
 }
 
 template <typename T>
-void Torch_QMMM_Interaction<T>::save_torch_output(const unsigned int step
-                                                , const topology::Topology& topo
+void Torch_QMMM_Interaction<T>::save_torch_output(const topology::Topology& topo
                                                 , const configuration::Configuration& conf
                                                 , const simulation::Simulation& sim) {
-  save_output_gradients(output_gradient_stream, step);
+  save_output_gradients(output_gradient_stream, topo, conf, sim);
   if (sim.param().qmmm.qmmm > simulation::qmmm_mechanical) { // electrostatic embedding
-    save_output_pc_gradients(output_point_charge_gradient_stream, step);
+    save_output_pc_gradients(output_point_charge_gradient_stream, topo, conf, sim);
   }
   else { // mechanical embedding
     // TODO: not implemented
@@ -472,7 +459,9 @@ void Torch_QMMM_Interaction<T>::save_torch_output(const unsigned int step
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
-                                               , const unsigned int step) {
+                                               , const topology::Topology& topo
+                                               , const configuration::Configuration& conf
+                                               , const simulation::Simulation& sim) {
   // Gromos -> Torch length unit is inverse of input value from Torch
   // specification file
   const double len_to_torch = 1.0 / this->model.unit_factor_length;
@@ -500,8 +489,9 @@ void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
-                                                       , const unsigned int step
-                                                       , const unsigned int ncharges) {
+                                                       , const topology::Topology& topo
+                                                       , const configuration::Configuration& conf
+                                                       , const simulation::Simulation& sim) {
   // Gromos -> Torch unit is inverse of input value from Torch
   // specification file
   const double cha_to_torch = 1.0 / this->model.unit_factor_charge;
@@ -532,7 +522,9 @@ void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
-                                                    , const unsigned int step) {
+                                                    , const topology::Topology& topo
+                                                    , const configuration::Configuration& conf
+                                                    , const simulation::Simulation& sim) {
   // Gromos -> Torch unit is inverse of input value from Torch
   // specification file
   const double energy_to_torch = 1.0 / this->model.unit_factor_energy;
@@ -544,7 +536,10 @@ void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
   // Write energy
   ifs.setf(std::ios::fixed, std::ios::floatfield);
   ifs << std::setprecision(12);
-  ifs << "ENERGY: " << qm_zone.QM_energy() * energy_to_torch << '\n';
+
+  double energy = static_cast<double>(energy_tensor.item<T>()) *
+                  this->model.unit_factor_energy;
+  ifs << "ENERGY: " << energy * energy_to_torch << '\n';
 
   // Write QM atoms
   for (std::set<QM_Atom>::iterator
@@ -565,7 +560,9 @@ void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_output_pc_gradients(std::ofstream& ifs
-                                                       , const unsigned int step) {
+                                                       , const topology::Topology& topo
+                                                       , const configuration::Configuration& conf
+                                                       , const simulation::Simulation& sim) {
   // Gromos -> Torch unit is inverse of input value from Torch
   // specification file
   const double force_to_torch = 1.0 / this->model.unit_factor_force;
@@ -590,7 +587,9 @@ void Torch_QMMM_Interaction<T>::save_output_pc_gradients(std::ofstream& ifs
 
 template <typename T>
 void Torch_QMMM_Interaction<T>::save_output_charges(std::ofstream& ifs
-                                                  , const unsigned int step) {
+                                                  , const topology::Topology& topo
+                                                  , const configuration::Configuration& conf
+                                                  , const simulation::Simulation& sim) {
   // TODO: not implemented
 }
 

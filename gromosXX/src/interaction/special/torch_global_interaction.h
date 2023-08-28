@@ -101,16 +101,14 @@ private:
   /**
    * Saves Torch input data
    */
-  void save_torch_input(const unsigned int step
-                      , const topology::Topology& topo
+  void save_torch_input(const topology::Topology& topo
                       , const configuration::Configuration& conf
                       , const simulation::Simulation& sim) override;
 
   /**
    * Saves Torch output data
    */
-  void save_torch_output(const unsigned int step
-                       , const topology::Topology& topo
+  void save_torch_output(const topology::Topology& topo
                        , const configuration::Configuration& conf
                        , const simulation::Simulation& sim) override;
   
@@ -118,7 +116,6 @@ private:
    * Saves the coordinates sent to Torch
    */
   void save_input_coord(std::ofstream& ifs
-                      , const unsigned int step
                       , const topology::Topology& topo
                       , const configuration::Configuration& conf
                       , const simulation::Simulation& sim);
@@ -127,7 +124,6 @@ private:
    * Saves the energy and gradients from backwards call on Torch model
    */
   void save_output_gradients(std::ofstream& ifs
-                           , const unsigned int step
                            , const topology::Topology& topo
                            , const configuration::Configuration& conf
                            , const simulation::Simulation& sim);
