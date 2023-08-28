@@ -467,7 +467,7 @@ void Torch_QMMM_Interaction<T>::save_input_coord(std::ofstream& ifs
   const double len_to_torch = 1.0 / this->model.unit_factor_length;
 
   // write step size
-  this->write_step_size(ifs, step);
+  this->write_step_size(ifs, sim.steps());
 
   // write QM coordinates
   this->write_coordinate_header(ifs);
@@ -498,7 +498,7 @@ void Torch_QMMM_Interaction<T>::save_input_point_charges(std::ofstream& ifs
   const double len_to_torch = 1.0 / this->model.unit_factor_length;
   
   // write step size
-  this->write_step_size(ifs, step);
+  this->write_step_size(ifs, sim.steps());
 
   // write QM coordinates
   ifs << ncharges << '\n';
@@ -531,7 +531,7 @@ void Torch_QMMM_Interaction<T>::save_output_gradients(std::ofstream& ifs
   const double force_to_torch = 1.0 / this->model.unit_factor_force;
 
   // write step size
-  this->write_step_size(ifs, step);
+  this->write_step_size(ifs, sim.steps());
 
   // Write energy
   ifs.setf(std::ios::fixed, std::ios::floatfield);
@@ -568,7 +568,7 @@ void Torch_QMMM_Interaction<T>::save_output_pc_gradients(std::ofstream& ifs
   const double force_to_torch = 1.0 / this->model.unit_factor_force;
 
   // write step size
-  this->write_step_size(ifs, step);
+  this->write_step_size(ifs, sim.steps());
 
   // Parse MM atoms
   for (std::set<MM_Atom>::iterator
