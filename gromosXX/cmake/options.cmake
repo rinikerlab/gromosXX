@@ -5,7 +5,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # set options
-option(OMP "enable OMP" ON)
+option(OMP "enable OMP" OFF)
 option(MPI "enable MPI" OFF)
 option(CUDAKERNEL "enable CUDA" OFF)
 option(XTB "enable XTB" OFF) # -DXTB={XTB_ROOT}
