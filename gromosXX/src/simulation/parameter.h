@@ -4554,6 +4554,10 @@ namespace simulation
          * use the ALPB solvent model (alternative GBSA)
          */
         bool alpb = true;
+        /**
+         * electronic temperature for Fermi smearning (https://xtb-docs.readthedocs.io/en/latest/sp.html#fermi-smearing)
+         */
+        double electronic_temperature = 300.0;
       } xtb; 
 
       /**

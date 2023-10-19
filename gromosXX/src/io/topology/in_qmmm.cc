@@ -517,16 +517,16 @@ END
  * GFNHAM: 1 or 2 for GFN1-xTB or GFN2-xTB, respectively 
  * and verbosity level: 0 (none), 1 (minimimal), 2 (full) XVERBO
  * Additional input may be number of maximum iterations XTBITE
- * and and accuracy multiplier XTBACC. 
- * Default values are XTBITE = 250 and XTBACC = 1.0
+ * and, accuracy multiplier XTBACC, and electronic temperature XTBEL. 
+ * Default values are XTBITE = 250 and XTBACC = 1.0 and 300
  * (https://xtb-docs.readthedocs.io/en/latest/sp.html#accuracy-and-iterations)
  *
  @verbatim
 XTBOPTIONS
 # GFNHAM    XVERBO
        1         1
-# XTBITE    XTBACC   # XTBIPL    XTBSLV    XTBTMP    XTBALP
-     100       0.1          1     water    298.15         1
+# XTBITE    XTBACC   # XTBIPL    XTBSLV    XTBTMP    XTBALP    XTBTEL
+     100       0.1          1     water    298.15         1      1000
 END
  @endverbatim
  * XTBFILES is an optional block that accepts a file path
@@ -1115,7 +1115,7 @@ void io::In_QMMM::read(topology::Topology& topo,
       }
       else {
         unsigned int hamiltonian, verbosity, maxIter, implicit_solvent, alpb;
-        double accuracy, temperature;
+        double accuracy, temperature, electronic_temperature;
         std::string solvent;
         std::string line(buffer[1]);
         _lineStream.clear();
@@ -1213,6 +1213,17 @@ void io::In_QMMM::read(topology::Topology& topo,
           }
           DEBUG(1, "sim.param().qmmm.xtb.alpb:");
           DEBUG(1, sim.param().qmmm.xtb.alpb);
+
+          // electronic temperature
+          _lineStream >> electronic_temperature;
+          if (_lineStream.fail()) {
+            io::messages.add("reading in electronic temperature parameter.",
+                              "In_QMMM", io::message::error);
+              return;
+          }
+          sim.param().qmmm.xtb.electronic_temperature = electronic_temperature;
+          DEBUG(1, "sim.param().qmmm.xtb.electronic_temperature:");
+          DEBUG(1, sim.param().qmmm.xtb.electronic_temperature);
         }
       }
     } // XTBOPTIONS

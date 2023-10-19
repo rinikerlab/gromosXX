@@ -140,7 +140,12 @@ int interaction::XTB_Worker::init(const topology::Topology& topo
     if (xtb_checkEnvironment(this->env)) {
       xtb_showEnvironment(this->env, NULL);
       return 1;
+    }
   }
+  xtb_setElectronicTemp(this->env, this->calc, this->param->electronic_temperature);
+  if (xtb_checkEnvironment(this->env)) {
+    xtb_showEnvironment(this->env, NULL);
+    return 1;
   }
 
   // bind output to file
