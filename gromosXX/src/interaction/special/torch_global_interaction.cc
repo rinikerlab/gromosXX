@@ -115,7 +115,7 @@ int Torch_Global_Interaction<T>::_gather_atoms(const topology::Topology& topo,
   for (unsigned idx = 0; idx < natoms; idx++) {
     periodicity.nearest_image(ref_pos, pos(idx), nim);
     DEBUG(15, "Atom " << idx << "  (" << topo.qm_atomic_number(idx) << ") : "
-                      << math::v2s(math::v2s(ref_pos - nim) * len_to_torch));
+                      << math::v2s((ref_pos - nim) * len_to_torch));
     math::vector_c2f<T>(positions, ref_pos - nim, idx, len_to_torch);
   }
 
@@ -202,7 +202,7 @@ int Torch_Global_Interaction<T>::update_forces(topology::Topology &topo,
   math::Matrix virial_tensor(0.0);
 
   for (unsigned idx = 0; idx < natoms; ++idx) {
-    DEBUG(15, "Parsing gradients of atom " << i);
+    DEBUG(15, "Parsing gradients of atom " << idx);
     math::Vec force;
     // forces = negative gradient (!)
     // TODO: before batching is introduced, batch_size - 1 should be less general
