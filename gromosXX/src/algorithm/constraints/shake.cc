@@ -357,23 +357,28 @@ if ((topo.solute().distance_constraints().size() &&
 #ifdef XXMPI
   // set unaffected solute indices for each group
   for (unsigned int i = 0; i < topo.num_solute_atoms(); ++i) {
-	  if(affected_indices[m_rank].find(i) == affected_indices[m_rank].end())
+	  if(affected_indices[m_rank].find(i) == affected_indices[m_rank].end()) {
 		  m_constraint_groups[m_rank].unaffected_indices.push_back(i);
+    }
   }
   // detect unconstrained solute atoms and remove from unaffected list for master process
   if(m_rank == 0) {
-      std::vector<unsigned int>::iterator it_end = m_constraint_groups[0].unaffected_indices.end();
+    std::vector<unsigned int> unconstrained_atoms;
 	  for (unsigned int i = 0; i < topo.num_solute_atoms(); ++i) {
-		bool is_constrained = false;
-		for(int group_id = 1; group_id < m_size; ++group_id) {
-			is_constrained |= affected_indices[group_id].find(i) != affected_indices[group_id].end();
-		}
-		if(!is_constrained) {
-          it_end = std::remove(m_constraint_groups[0].unaffected_indices.begin(),
-                      m_constraint_groups[0].unaffected_indices.end(), i);
-        }
-	  }
-      m_constraint_groups[0].unaffected_indices.erase(it_end, m_constraint_groups[0].unaffected_indices.end());
+		  bool is_constrained = false;
+		  for(int group_id = 1; group_id < m_size; ++group_id) {
+		  	is_constrained |= affected_indices[group_id].find(i) != affected_indices[group_id].end();
+		  }
+		  if(!is_constrained) {
+        unconstrained_atoms.push_back(i);
+	    }
+    }
+    for (auto i : unconstrained_atoms) {
+      m_constraint_groups[0].unaffected_indices.erase(
+        std::remove(m_constraint_groups[0].unaffected_indices.begin(),
+                    m_constraint_groups[0].unaffected_indices.end(), i),
+        m_constraint_groups[0].unaffected_indices.end());
+    }
   }
 #endif
 
