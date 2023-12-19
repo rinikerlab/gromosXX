@@ -36,16 +36,13 @@ public:
     // initializing where tensors will live and how they look like
     tensor_int64 = torch::TensorOptions() 
                   .dtype(torch::kInt64)
-                  .device(model.device)
                   .layout(torch::kStrided); 
     tensor_float_gradient = torch::TensorOptions() 
                   .dtype(model.precision)
-                  .device(model.device)
                   .layout(torch::kStrided)
                   .requires_grad(true);  
     tensor_float_no_gradient = torch::TensorOptions() 
                   .dtype(model.precision)
-                  .device(model.device)
                   .layout(torch::kStrided)
                   .requires_grad(false);
   }

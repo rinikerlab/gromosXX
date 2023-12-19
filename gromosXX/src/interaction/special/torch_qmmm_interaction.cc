@@ -256,7 +256,7 @@ int Torch_QMMM_Interaction<T>::build_tensors(const simulation::Simulation &sim) 
   int err = 0;
   assert(batch_size == 1); // code needs to change to support batch_size > 1
   qm_atomic_numbers_tensor = torch::from_blob(
-      qm_atomic_numbers.data(), {batch_size, natoms}, this->tensor_int64);
+      qm_atomic_numbers.data(), {natoms}, this->tensor_int64);
   qm_positions_tensor =
       torch::from_blob(qm_positions.data(), {batch_size, natoms, dimensions},
                        this->tensor_float_gradient);
@@ -268,7 +268,6 @@ int Torch_QMMM_Interaction<T>::build_tensors(const simulation::Simulation &sim) 
   mm_positions_tensor =
       torch::from_blob(mm_positions.data(), {batch_size, ncharges, dimensions},
                        this->tensor_float_gradient);
-
   return err;
 }
 
@@ -276,11 +275,16 @@ template <typename T>
 int Torch_QMMM_Interaction<T>::forward() {
   DEBUG(15, "Calling forward on the model");
   int err = 0;
+  auto qm_atomic_numbers_tensor_device = qm_atomic_numbers_tensor.to(this->model.device);
+  auto qm_positions_tensor_device = qm_positions_tensor.to(this->model.device);
+  auto mm_atomic_numbers_tensor_device = mm_atomic_numbers_tensor.to(this->model.device);
+  auto mm_charges_tensor_device = mm_charges_tensor.to(this->model.device);
+  auto mm_positions_tensor_device = mm_positions_tensor.to(this->model.device);
   std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor,
              torch::Tensor>
-      input_tuple(qm_atomic_numbers_tensor, qm_positions_tensor,
-                  mm_atomic_numbers_tensor, mm_charges_tensor,
-                  mm_positions_tensor);
+      input_tuple(qm_atomic_numbers_tensor_device, qm_positions_tensor_device,
+                  mm_atomic_numbers_tensor_device, mm_charges_tensor_device,
+                  mm_positions_tensor_device);
   energy_tensor = this->module.forward({input_tuple}).toTensor();
   return err;
 }
@@ -303,7 +307,7 @@ template <typename T>
 int Torch_QMMM_Interaction<T>::update_energy(topology::Topology &topo,
                                              configuration::Configuration &conf,
                                              const simulation::Simulation &sim) {
-  double energy = static_cast<double>(energy_tensor.item<T>()) *
+  double energy = energy_tensor.item<T>() *
                   this->model.unit_factor_energy;
   DEBUG(15, "Parsing Torch energy: " << energy << " kJ / mol");
   // TODO: split energies depending on which model it is and print
@@ -323,16 +327,14 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
                                    to = qm_zone.qm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradients of QM atom " << it->index);
-    math::Vec force;
     // forces = negative gradient (!)
-    force[0] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
+    it->force(0) = -1.0 * (qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
-    force[1] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
+    it->force(1) = -1.0 * (qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
           this->model.unit_factor_force;
-    force[2] = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
+    it->force(2) = -1.0 * (qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
           this->model.unit_factor_force;     
     DEBUG(15, "Force: " << math::v2s(force));
-    it->force = force; // save copy for virial calculation
     ++qm_atom;
   }
 
@@ -342,14 +344,12 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of capping atom " << it->qm_index << "-"
                                                   << it->mm_index);
-    math::Vec force;
-    force(0) = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
+    it->force(0) = -1.0 * (qm_gradient_tensor[batch_size - 1][qm_atom][0].item<T>()) *  // 0 idx for batch_size
           this->model.unit_factor_force;
-    force(1) = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
+    it->force(1) = -1.0 * (qm_gradient_tensor[batch_size - 1][qm_atom][1].item<T>()) *
           this->model.unit_factor_force;
-    force(2) = -1.0 * static_cast<double>(qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
+    it->force(2) = -1.0 * (qm_gradient_tensor[batch_size - 1][qm_atom][2].item<T>()) *
           this->model.unit_factor_force;
-    it->force = force; // save copy for distribution later
     DEBUG(15, "Redistributing force of capping atom");
     DEBUG(15, "QM-MM link: " << it->qm_index << " - " << it->mm_index);
     std::set<QM_Atom>::iterator qm_it = this->qm_zone.qm.find(it->qm_index);
@@ -363,36 +363,40 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
 
   // Parse forces on MM atoms
   unsigned int mm_atom = 0;
+  T* mm_gradient_data = mm_gradient_tensor.data_ptr<T>();
+  
+  // Pre-calculate common indices and strides
+  int dim2 = mm_gradient_tensor.size(1);
+  int dim3 = mm_gradient_tensor.size(2);
+  int stride0 = dim2 * dim3;
+  int stride1 = dim3;
+  int batch_index = (batch_size - 1) * stride0;
+
   for (std::set<MM_Atom>::iterator it = qm_zone.mm.begin(),
                                    to = qm_zone.mm.end();
        it != to; ++it) {
     DEBUG(15, "Parsing gradient of MM atom " << it->index);
-    math::Vec force;
     // forces = negative gradient (!)
-    force(0) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) *  // 0 idx for batch_size
-          this->model.unit_factor_force;
-    force(1) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
-          this->model.unit_factor_force;
-    force(2) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
-          this->model.unit_factor_force;
+    it->force(0) = -1.0 * static_cast<double>(mm_gradient_data[batch_index + mm_atom * stride1 + 0]) * this->model.unit_factor_force;
+    it->force(1) = -1.0 * static_cast<double>(mm_gradient_data[batch_index + mm_atom * stride1 + 1]) * this->model.unit_factor_force;
+    it->force(2) = -1.0 * static_cast<double>(mm_gradient_data[batch_index + mm_atom * stride1 + 2]) * this->model.unit_factor_force;
+    
     DEBUG(15, "Force: " << math::v2s(force));
-    it->force = force; // save copy for virial calculation
     if (it->is_polarisable) {
       ++mm_atom; // COS gradients live directly past the corresponding MM
                  // gradients
       DEBUG(15, "Parsing gradient of COS of MM atom " << it->index);
-      math::Vec cos_force;
-      cos_force(0) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) * // 0 idx for batch_size
+      it->cos_force(0) = -1.0 * (mm_gradient_tensor[batch_size - 1][mm_atom][0].item<T>()) * // 0 idx for batch_size
             this->model.unit_factor_force;
-      cos_force(1) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
+      it->cos_force(1) = -1.0 * (mm_gradient_tensor[batch_size - 1][mm_atom][1].item<T>()) *
             this->model.unit_factor_force;
-      cos_force(2) = -1.0 * static_cast<double>(mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
+      it->cos_force(2) = -1.0 * (mm_gradient_tensor[batch_size - 1][mm_atom][2].item<T>()) *
             this->model.unit_factor_force;
       DEBUG(15, "Force " << math::v2s(cos_force));
-      it->cos_force = cos_force; // save copy for virial calculation
     }
     ++mm_atom;
   }
+
 
   // calculate virial and update forces
   // TODO: COS not processed / updated
@@ -430,7 +434,7 @@ int Torch_QMMM_Interaction<T>::update_forces(topology::Topology &topo,
   if (sim.param().pcouple.virial) {
     conf.current().virial_tensor += virial_tensor;
   }
-
+  
   return 0;
 }
 
