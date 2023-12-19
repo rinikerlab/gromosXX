@@ -38,11 +38,17 @@ public:
   /**
    * Initializes everything necessary
    */
-  virtual int init(topology::Topology &topo, configuration::Configuration &conf,
+  int init(topology::Topology &topo, configuration::Configuration &conf,
                    simulation::Simulation &sim, std::ostream &os = std::cout,
                    bool quiet = false) override;
 
 private:
+  /**
+   * Initializes everything necessary
+   */
+  int init_interaction(topology::Topology &topo, configuration::Configuration &conf,
+                   simulation::Simulation &sim, std::ostream &os = std::cout,
+                   bool quiet = false) override;
   /**
    * Sets-up a pointer to the QM zone of the simulation
    */

@@ -33,16 +33,21 @@
 namespace interaction {
 
 template <typename T>
-int Torch_Global_Interaction<T>::init(topology::Topology &topo,
+int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
+                                 configuration::Configuration &conf,
+                                 simulation::Simulation &sim, std::ostream &os,
+                                 bool quiet) {
+  return Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
+}
+
+template <typename T>
+int Torch_Global_Interaction<T>::init_interaction(topology::Topology &topo,
                                  configuration::Configuration &conf,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
   DEBUG(15, "Initializing Torch Global Interaction");
   // Torch_Interaction itself is guarded against multiple MPI processes and also initializes m_rank and m_size
   int err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
-#ifdef XXMPI
-  if (this->m_rank == 0) { // only execute on MPI master
-#endif
   if (err)
     return err;
 
@@ -66,10 +71,6 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
     err = this->open_input(output_gradient_stream, trajectory_output_gradient_file);
     if (err) return err;
   }
-
-#ifdef XXMPI
-  }
-#endif
 
   return err;
 }

@@ -69,6 +69,12 @@ public:
 
 protected:
   /**
+   * Initializes everything necessary
+   */
+  virtual int init_interaction(topology::Topology &topo, configuration::Configuration &conf,
+                   simulation::Simulation &sim, std::ostream &os = std::cout,
+                   bool quiet = false) = 0;
+  /**
    * Loads and deserializes the model
    */
   virtual int load_model();

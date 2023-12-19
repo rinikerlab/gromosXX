@@ -34,19 +34,19 @@ public:
       : Torch_Interaction<T>(model, "Torch Global Interface") {}
 
   /**
-   * Deallocates resources
-   */
-  virtual ~Torch_Global_Interaction() = default;
-
-  /**
    * Initializes everything necessary
    */
-  virtual int init(topology::Topology &topo, configuration::Configuration &conf,
+  int init(topology::Topology &topo, configuration::Configuration &conf,
                    simulation::Simulation &sim, std::ostream &os = std::cout,
                    bool quiet = false) override;
 
 private:
-
+/**
+   * Initializes everything necessary
+   */
+  int init_interaction(topology::Topology &topo, configuration::Configuration &conf,
+                   simulation::Simulation &sim, std::ostream &os = std::cout,
+                   bool quiet = false) override;
   /**
    * Prepares the coordinates according to the atom selection scheme selected
    */

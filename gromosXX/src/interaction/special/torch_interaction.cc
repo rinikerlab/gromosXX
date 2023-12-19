@@ -74,29 +74,12 @@ int Torch_Interaction<T>::init(topology::Topology &topo,
 
     m_timer.stop_subtimer("Loading model");
     m_timer.stop();
+
+    // initialize child class interaction
+    init_interaction(topo, conf, sim, os, quiet);
 #ifdef XXMPI
   }
 #endif
-  return err;
-}
-
-template <typename T>
-int Torch_Interaction<T>::load_model() {
-  DEBUG(15, "Loading Torch model");
-  int err = 0;
-  try {
-    // Deserialize the ScriptModule from a file using torch::jit::load().
-    module = torch::jit::load(model.filename, model.device);
-  } catch (const c10::Error &e) {
-    io::messages.add("Unable to load / deserialize Torch model: " +
-                         model.filename + "\n" + e.what() + "\n",
-                     io::message::error);
-    err = 1;
-    return err;
-  }
-
-  DEBUG(15, "Torch model successfully loaded");
-
   return err;
 }
 
@@ -168,6 +151,26 @@ int Torch_Interaction<T>::calculate_interactions(
 #ifdef XXMPI
   }
 #endif
+  return err;
+}
+
+template <typename T>
+int Torch_Interaction<T>::load_model() {
+  DEBUG(15, "Loading Torch model");
+  int err = 0;
+  try {
+    // Deserialize the ScriptModule from a file using torch::jit::load().
+    module = torch::jit::load(model.filename, model.device);
+  } catch (const c10::Error &e) {
+    io::messages.add("Unable to load / deserialize Torch model: " +
+                         model.filename + "\n" + e.what() + "\n",
+                     io::message::error);
+    err = 1;
+    return err;
+  }
+
+  DEBUG(15, "Torch model successfully loaded");
+
   return err;
 }
 
