@@ -41,6 +41,7 @@ int Torch_Interaction<T>::init(topology::Topology &topo,
                             simulation::Simulation &sim, std::ostream &os,
                             bool quiet) {
   DEBUG(15, "Initializing Torch interaction");
+  int err = 0;
 #ifdef XXMPI
   if (sim.mpi) {
     m_rank = sim.mpiControl().threadID;
@@ -51,7 +52,6 @@ int Torch_Interaction<T>::init(topology::Topology &topo,
   }
   if (m_rank == 0) { // only execute on master
 #endif
-  int err = 0;
     m_timer.start(sim);
     m_timer.start_subtimer("Loading model");
     err = load_model();
@@ -62,7 +62,7 @@ int Torch_Interaction<T>::init(topology::Topology &topo,
     if(!quiet) {
       os << "TORCH\n";
 #ifdef XXMPI
-      os << "\tModel load on MPI rank: " << m_rank << " of " << m_size '\n';
+      os << "\tModel loaded on MPI rank: " << m_rank << ". Number of MPI processes: " << m_size << '\n';
 #endif
       os << "\tModel name: " << model.filename << '\n';
       os << "\tunits conversion factors: ";
