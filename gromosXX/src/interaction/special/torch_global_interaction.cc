@@ -38,7 +38,11 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
   DEBUG(15, "Initializing Torch Global Interaction");
-  int err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
+  int err = 0;
+#ifdef XXMPI
+  if (m_rank == 0) { // only execute on MPI master
+#endif
+  err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
   if (err)
     return err;
 
@@ -62,6 +66,10 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
     err = this->open_input(output_gradient_stream, trajectory_output_gradient_file);
     if (err) return err;
   }
+
+#ifdef XXMPI
+  }
+#endif
 
   return err;
 }

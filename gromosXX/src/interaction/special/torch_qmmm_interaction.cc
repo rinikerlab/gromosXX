@@ -46,8 +46,12 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
                                  configuration::Configuration &conf,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
+  int err = 0;
+#ifdef XXMPI
+  if (m_rank == 0) { // only execute on master
+#endif
   DEBUG(15, "Initializing Torch QM/MM Interaction");
-  int err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
+  err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
   if (err) return err;
 
   // open trajectory streams
@@ -85,6 +89,10 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
 
   err = init_qm_atom_numbers();
   if (err) return err;
+
+#ifdef XXMPI
+  }
+#endif
 
   return err;
 }
