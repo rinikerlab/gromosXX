@@ -191,6 +191,16 @@ protected:
    * Stores options how floating point tensor are stored that require no gradients (e.g. for atomic charges)
   */
   torch::TensorOptions tensor_float_no_gradient;
+#ifdef XXMPI
+  /**
+   * MPI rank of the current process
+  */
+  int m_rank;
+  /**
+   * Number of MPI ranks
+  */
+  int m_size;
+#endif
 };
 
 } // namespace interaction

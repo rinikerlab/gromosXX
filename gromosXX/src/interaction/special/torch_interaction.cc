@@ -24,6 +24,10 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
+#ifdef XXMPI
+#include <mpi.h>
+#endif
+
 #undef MODULE
 #undef SUBMODULE
 #define MODULE interaction
@@ -37,24 +41,42 @@ int Torch_Interaction<T>::init(topology::Topology &topo,
                             simulation::Simulation &sim, std::ostream &os,
                             bool quiet) {
   DEBUG(15, "Initializing Torch interaction");
-  m_timer.start(sim);
-  m_timer.start_subtimer("Loading model");
-  int err = load_model();
-  if (err)
-    return err;
-
-  if(!quiet) {
-    os << "TORCH\n";
-    os << "\tModel name: " << model.filename << '\n';
-    os << "\tunits conversion factors: ";
-    print_unit_factors(os);
-    os << std::endl;
-    os << "\tDevice: " << model.device << '\n';
-    os << "\tPrecision: " << model.precision << "\n\n";
+#ifdef XXMPI
+  if (sim.mpi) {
+    m_rank = sim.mpiControl().threadID;
+    m_size = sim.mpiControl().numberOfThreads;
+  } else {
+    m_rank = 0;
+    m_size = 1;
   }
+  if (m_rank == 0) { // only execute on master
+#endif
+  int err = 0;
+    m_timer.start(sim);
+    m_timer.start_subtimer("Loading model");
+    err = load_model();
+    if (err) {
+      return err;
+    }
 
-  m_timer.stop_subtimer("Loading model");
-  m_timer.stop();
+    if(!quiet) {
+      os << "TORCH\n";
+#ifdef XXMPI
+      os << "\tModel load on MPI rank: " << m_rank << " of " << m_size '\n';
+#endif
+      os << "\tModel name: " << model.filename << '\n';
+      os << "\tunits conversion factors: ";
+      print_unit_factors(os);
+      os << std::endl;
+      os << "\tDevice: " << model.device << '\n';
+      os << "\tPrecision: " << model.precision << "\n\n";
+    }
+
+    m_timer.stop_subtimer("Loading model");
+    m_timer.stop();
+#ifdef XXMPI
+  }
+#endif
   return err;
 }
 
@@ -82,63 +104,70 @@ template <typename T>
 int Torch_Interaction<T>::calculate_interactions(
     topology::Topology &topo, configuration::Configuration &conf,
     simulation::Simulation &sim) {
-  DEBUG(15, "Calculating Torch Interaction");
-  m_timer.start(sim);
+    int err = 0;
+#ifdef XXMPI
+  if (m_rank == 0) {
+#endif
+    DEBUG(15, "Calculating Torch Interaction");
+    m_timer.start(sim);
 
-  m_timer.start_subtimer("Preparing input");
-  int err = prepare_input(topo, conf, sim);
-  if (err)
-    return err;
-  m_timer.stop_subtimer("Preparing input");
+    m_timer.start_subtimer("Preparing input");
+    err = prepare_input(topo, conf, sim);
+    if (err)
+      return err;
+    m_timer.stop_subtimer("Preparing input");
 
-  if ((model.write > 0) &&
-	  ((sim.steps()) % (model.write) == 0)) {
-    m_timer.start_subtimer("Writing Torch input");
-    // steps reported in output are steps finished already
-    save_torch_input(topo, conf, sim);
-    m_timer.stop_subtimer("Writing Torch input");
-  }
+    if ((model.write > 0) &&
+	    ((sim.steps()) % (model.write) == 0)) {
+      m_timer.start_subtimer("Writing Torch input");
+      // steps reported in output are steps finished already
+      save_torch_input(topo, conf, sim);
+      m_timer.stop_subtimer("Writing Torch input");
+    }
 
-  m_timer.start_subtimer("Building tensor");
-  err = build_tensors(sim);
-  if (err)
-    return err;
-  m_timer.stop_subtimer();
+    m_timer.start_subtimer("Building tensor");
+    err = build_tensors(sim);
+    if (err)
+      return err;
+    m_timer.stop_subtimer();
 
-  m_timer.start_subtimer("Forward pass");
-  err = forward();
-  if (err)
-    return err;
-  m_timer.stop_subtimer("Forward pass");
+    m_timer.start_subtimer("Forward pass");
+    err = forward();
+    if (err)
+      return err;
+    m_timer.stop_subtimer("Forward pass");
 
-  m_timer.start_subtimer("Backward pass");
-  err = backward();
-  if (err)
-    return err;
-  m_timer.stop_subtimer("Backward pass");
+    m_timer.start_subtimer("Backward pass");
+    err = backward();
+    if (err)
+      return err;
+    m_timer.stop_subtimer("Backward pass");
 
-  m_timer.start_subtimer("Parsing tensors");
-  err = update_energy(topo, conf, sim);
-  if (err)
-    return err;
-  err = update_forces(topo, conf, sim);
-  if (err)
-    return err;
-  m_timer.stop_subtimer("Parsing tensors");
+    m_timer.start_subtimer("Parsing tensors");
+    err = update_energy(topo, conf, sim);
+    if (err)
+      return err;
+    err = update_forces(topo, conf, sim);
+    if (err)
+      return err;
+    m_timer.stop_subtimer("Parsing tensors");
 
-  if ((model.write > 0) &&
-	  ((sim.steps()) % (model.write) == 0)) {
-    m_timer.start_subtimer("Writing Torch output");
-    // steps reported in output are steps finished already
-    save_torch_output( topo, conf, sim);
-    m_timer.stop_subtimer("Writing Torch output");
-  }
+    if ((model.write > 0) &&
+	    ((sim.steps()) % (model.write) == 0)) {
+      m_timer.start_subtimer("Writing Torch output");
+      // steps reported in output are steps finished already
+      save_torch_output( topo, conf, sim);
+      m_timer.stop_subtimer("Writing Torch output");
+    }
 
   // TODO: call other method like interact_with_model and / or destroy_model
   // idea would be that models can do more than forward and backward but also write to files, ...
 
   m_timer.stop();
 
+#ifdef XXMPI
+  }
+#endif
   return err;
 }
 
