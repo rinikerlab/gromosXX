@@ -46,6 +46,7 @@ int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
                                  configuration::Configuration &conf,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
+  DEBUG(15, "Initializing Torch QM/MM Interaction");
   return Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
 }
 
@@ -55,10 +56,6 @@ int Torch_QMMM_Interaction<T>::init_interaction(topology::Topology &topo,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
   int err = 0;
-
-  DEBUG(15, "Initializing Torch QM/MM Interaction");
-  if (err) return err;
-
   // open trajectory streams
   if (this->model.write > 0) {
     // output filenames

@@ -33,10 +33,11 @@
 namespace interaction {
 
 template <typename T>
-int Torch_QMMM_Interaction<T>::init(topology::Topology &topo,
+int Torch_Global_Interaction<T>::init(topology::Topology &topo,
                                  configuration::Configuration &conf,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
+  DEBUG(15, "Initializing Torch Global Interaction");
   return Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
 }
 
@@ -45,11 +46,7 @@ int Torch_Global_Interaction<T>::init_interaction(topology::Topology &topo,
                                  configuration::Configuration &conf,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
-  DEBUG(15, "Initializing Torch Global Interaction");
-  // Torch_Interaction itself is guarded against multiple MPI processes and also initializes m_rank and m_size
-  int err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
-  if (err)
-    return err;
+  int err = 0;
 
   // one batch per iteration
   batch_size = 1;
