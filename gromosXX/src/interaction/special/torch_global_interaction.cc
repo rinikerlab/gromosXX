@@ -38,11 +38,11 @@ int Torch_Global_Interaction<T>::init(topology::Topology &topo,
                                  simulation::Simulation &sim, std::ostream &os,
                                  bool quiet) {
   DEBUG(15, "Initializing Torch Global Interaction");
-  int err = 0;
+  // Torch_Interaction itself is guarded against multiple MPI processes and also initializes m_rank and m_size
+  int err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
 #ifdef XXMPI
-  if (m_rank == 0) { // only execute on MPI master
+  if (this->m_rank == 0) { // only execute on MPI master
 #endif
-  err = Torch_Interaction<T>::init(topo, conf, sim, os, quiet);
   if (err)
     return err;
 
