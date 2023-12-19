@@ -200,6 +200,7 @@ int Torch_Global_Interaction<T>::update_forces(topology::Topology &topo,
 
   // calculate virial and update forces
   math::Matrix virial_tensor(0.0);
+  auto acc = gradient_tensor.accessor<T, 3>();
 
   for (unsigned idx = 0; idx < natoms; ++idx) {
     DEBUG(15, "Parsing gradients of atom " << idx);
@@ -207,12 +208,9 @@ int Torch_Global_Interaction<T>::update_forces(topology::Topology &topo,
     // forces = negative gradient (!)
     // TODO: before batching is introduced, batch_size - 1 should be less general
     assert(batch_size == 1);
-    force(0) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][0].item<T>()) *  // 0 idx for batch_size
-          this->model.unit_factor_force;
-    force(1) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][1].item<T>()) *
-          this->model.unit_factor_force;
-    force(2) = -1.0 * static_cast<double>(gradient_tensor[batch_size - 1][idx][2].item<T>()) *
-          this->model.unit_factor_force;     
+    force(0) = -1.0 * static_cast<double>(acc[batch_size - 1][idx][0]) * this->model.unit_factor_force;
+    force(1) = -1.0 * static_cast<double>(acc[batch_size - 1][idx][1]) * this->model.unit_factor_force;
+    force(2) = -1.0 * static_cast<double>(acc[batch_size - 1][idx][2]) * this->model.unit_factor_force;     
     DEBUG(15, "Atom " << idx << ", force: " << math::v2s(force));
     conf.current().force(idx) += force; 
     // virial calculation
