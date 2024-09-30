@@ -43,13 +43,6 @@ if(XTB)
 endif()
 
 if(TORCH)
-    # https://pytorch.org/cppdocs/installing.html
-    # conda installation would be nice but gives less flexibility
-    # https://stackoverflow.com/questions/72531611/how-to-setup-cmake-project-to-use-pytorch-c-api-installed-via-conda
-    # it is unclear if PyTorch was then compiled with c++11 or pre-c++11 flags leading to linker and runtime errors
-    # export Torch_DIR=/home/fpultar/dev/repos/libtorch-11-cpu
-    # cmake -S . -B build-d55dd79c4bc49ec831e917dc1af5d4decf913823 -DOMP=on -DMPI=off -DXTB=/home/fpultar/bin/xtb -DTORCH=/home/fpultar/dev/repos/libtorch-11-cpu
-    # cmake -S . -B build-d55dd79c4bc49ec831e917dc1af5d4decf913823 -DOMP=on -DMPI=off -DXTB=/home/fpultar/bin/xtb -DTORCH=/home/fpultar/dev/repos/libtorch-11-cuda
     # finding packages
     find_package(TorchSparse REQUIRED)
     find_package(TorchScatter REQUIRED)

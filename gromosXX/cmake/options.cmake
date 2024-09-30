@@ -8,8 +8,8 @@ endif()
 option(OMP "enable OMP" OFF)
 option(MPI "enable MPI" OFF)
 option(CUDAKERNEL "enable CUDA" OFF)
-option(XTB "enable XTB" OFF) # -DXTB={XTB_ROOT}
-option(TORCH "enable TORCH" OFF) # -DTORCH={TORCH_ROOT} (may be pre-C++11 or C++11)
+option(XTB "enable XTB" OFF) 
+option(TORCH "enable TORCH" OFF) 
 option(FORCEGROUPS "enable forcegroups" OFF)
 option(HEAVISIDE "enable heaviside" OFF)
 
